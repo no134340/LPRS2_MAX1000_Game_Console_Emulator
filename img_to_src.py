@@ -166,11 +166,13 @@ def img_to_src(
 			c.write('#include "{}"\n'.format(hn))
 						
 			if palette:
+				# added sprite name to palette name for easier switching between palettes
+				n = sprite.name
 				h.write('\n')
-				h.write('extern uint32_t palette[{}];\n'.format(len(palette)))
+				h.write('extern uint32_t palette_{}[{}];\n'.format(n, len(palette)))
 			
 				c.write('\n')
-				c.write('uint32_t palette[{}] = {{\n'.format(len(palette)))
+				c.write('uint32_t palette_{}[{}] = {{\n'.format(n,len(palette)))
 				for i in range(0, len(palette)-1):
 					c.write('\t0x{:06x},\n'.format(palette[i]))
 				c.write('\t0x{:06x}\n'.format(palette[-1]))

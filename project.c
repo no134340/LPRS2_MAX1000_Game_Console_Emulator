@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "system.h"
 #include <stdio.h>
+#include "title_screen_idx4.h"
+#include "A1_screen_idx4.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,12 +68,75 @@ typedef struct {
 } point_t;
 
 
+typedef enum {
+	TITLE_SCREEN,
+	MAP_A1,
+	MAP_A2
+	// posle dodati ostale tile screenove
+} current_screen_t;
 
+// pointers to screen "sprites"
+uint32_t* screens[] = 
+{
+	title_screen__p, A1_screen__p
+};
+
+// pointers to screen palletes 
+uint32_t* screen_palletes[] = 
+{
+	palette_title_screen, palette_A1_screen
+};
 
 typedef struct {
+	// trenutno prikazani deo mape / ekran
+	current_screen_t current_screen;
 } game_state_t;
 
 
+
+static inline uint32_t shift_div_with_round_down(uint32_t num, uint32_t shift){
+	uint32_t d = num >> shift;
+	return d;
+}
+
+static inline uint32_t shift_div_with_round_up(uint32_t num, uint32_t shift){
+	uint32_t d = num >> shift;
+	uint32_t mask = (1<<shift)-1;
+	if((num & mask) != 0){
+		d++;
+	}
+	return d;
+}
+
+
+
+static void draw_sprite(
+	uint32_t* src_p,
+	uint16_t src_w,
+	uint16_t src_h,
+	uint16_t dst_x,
+	uint16_t dst_y
+) {
+	
+	
+	uint16_t dst_x8 = shift_div_with_round_down(dst_x, 3);
+	uint16_t src_w8 = shift_div_with_round_up(src_w, 3);
+	
+	
+	
+	for(uint16_t y = 0; y < src_h; y++){
+		for(uint16_t x8 = 0; x8 < src_w8; x8++){
+			uint32_t src_idx = y*src_w8 + x8;
+			uint32_t pixels = src_p[src_idx];
+			uint32_t dst_idx =
+				(dst_y+y)*SCREEN_IDX4_W8 +
+				(dst_x8+x8);
+			pack_idx4_p32[dst_idx] = pixels;
+		}
+	}
+	
+	
+}
 
 
 
@@ -82,24 +147,36 @@ typedef struct {
 int main(void) {
 	
 	// Setup.
-	gpu_p32[0] = 0; // Color bar.
-	gpu_p32[0x800] = 0x00ff00ff; // Magenta for HUD.
+	gpu_p32[0] = 2; // IDX4 mode
+	gpu_p32[1] = 1; // Packed mode.
 
+	// Copy palette.
+	for(uint8_t i = 0; i < 16; i++){
+		palette_p32[i] = palette_title_screen[i];
+	}
 
 	// Game state.
 	game_state_t gs;
-	
+	gs.current_screen = TITLE_SCREEN;
 	
 	while(1){
 		
+		/*
+			Za sada samo isprobavamo crtkanje intro screen-a na ekran.
+		*/
 		
 		/////////////////////////////////////
 		// Poll controls.
 		
+		if(joypad.start) {
+			// nece sa start screena prelaziti na ovaj deo mape, ovo je samo test
+			gs.current_screen = MAP_A1;
+		}
 		
 		/////////////////////////////////////
 		// Gameplay.
 		
+
 		
 		
 		
@@ -124,10 +201,14 @@ int main(void) {
 		
 		
 		
-		
-		
-		
-		
+		// draw the background (the current active screen)
+		for(uint8_t i = 0; i < 16; i++){
+			palette_p32[i] = screen_palletes[gs.current_screen][i];
+		}
+		draw_sprite(
+			screens[gs.current_screen], title_screen__w, title_screen__h, 0, 0
+		);
+
 		
 	}
 

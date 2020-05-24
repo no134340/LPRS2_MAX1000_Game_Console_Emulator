@@ -65,47 +65,23 @@ def configure(conf):
 def build(bld):
 	bld.recurse('emulator')
 	
-	for p in ['intro', 'advanced_modes']:
-		bld.program(
-			features = 'cxx',
-			source = [p + '.c'],
-			use = 'emulator',
-			target = p
-		)
-		
-	digit_imgs = sorted(
-		glob.glob('images/red_*.png') + glob.glob('images/green_*.png')
-	)
 	bld(
 		rule = '${PYTHON} ${IMG_TO_SRC} -o ${TGT[0]} ${SRC} ' + \
 			'-f IDX4 -p 0x000000 -v',
-		source = digit_imgs,
-		target = ['sprites_idx4.c', 'sprites_idx4.h']
+		source = 'images/title_screen.png',
+		target = ['title_screen_idx4.c', 'title_screen_idx4.h']
 	)
+
 	bld(
 		rule = '${PYTHON} ${IMG_TO_SRC} -o ${TGT[0]} ${SRC} ' + \
-			'-f RGB333',
-		source = 'images/Pacman_Sprite_Map.png',
-		target = ['sprites_rgb333.c', 'sprites_rgb333.h']
+			'-f IDX4 -p 0x000000 -v',
+		source = 'images/A1_screen.png',
+		target = ['A1_screen_idx4.c', 'A1_screen_idx4.h']
 	)
+
 	bld.program(
 		features = 'cxx',
-		source = ['sprites.c', 'sprites_idx4.c'],
-		includes = ['build/'],
-		use = 'emulator',
-		target = 'sprites'
-	)
-	bld.program(
-		features = 'cxx',
-		source = ['sprite_anim.c', 'sprites_rgb333.c'],
-		includes = ['build/'],
-		use = 'emulator',
-		target = 'sprite_anim'
-	)
-	
-	bld.program(
-		features = 'cxx',
-		source = ['project.c'],
+		source = ['project.c', 'title_screen_idx4.c', 'A1_screen_idx4.c'],
 		includes = ['build/'],
 		use = 'emulator',
 		target = 'project'
