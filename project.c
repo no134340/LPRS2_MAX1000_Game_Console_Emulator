@@ -6,7 +6,7 @@
 #include "system.h"
 #include <stdio.h>
 #include "title_screen_idx4.h"
-#include "A1_screen_idx4.h"
+#include "screens_idx4.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 // Game config.
 
-
+#define Y_PADDING 56 // number of blank rows
 
 
 
@@ -69,22 +69,24 @@ typedef struct {
 
 
 typedef enum {
-	TITLE_SCREEN,
 	MAP_A1,
-	MAP_A2
-	// posle dodati ostale tile screenove
+	TITLE_SCREEN
+	// posle dodati ostale screenove
+	// title screen na kraju.
 } current_screen_t;
 
 // pointers to screen "sprites"
 uint32_t* screens[] = 
 {
-	title_screen__p, A1_screen__p
+	A1__p, title_screen__p 
 };
 
 // pointers to screen palletes 
 uint32_t* screen_palletes[] = 
 {
-	palette_title_screen, palette_A1_screen
+	// izgleda da je moja izmena u skripti pokupila ime poslednjeg skrina pa je po
+	// njemu nadenula ime paleti. it's not a bug it's a feature/
+	palette_title_screen, palette_P8
 };
 
 typedef struct {
@@ -158,6 +160,7 @@ int main(void) {
 	// Game state.
 	game_state_t gs;
 	gs.current_screen = TITLE_SCREEN;
+	int y_padding = 0;
 	
 	while(1){
 		
@@ -171,6 +174,7 @@ int main(void) {
 		if(joypad.start) {
 			// nece sa start screena prelaziti na ovaj deo mape, ovo je samo test
 			gs.current_screen = MAP_A1;
+			y_padding = Y_PADDING;
 		}
 		
 		/////////////////////////////////////
@@ -192,21 +196,19 @@ int main(void) {
 		
 		
 		
-		// Black background.
-		for(uint16_t r = 0; r < SCREEN_RGB333_H; r++){
-			for(uint16_t c = 0; c < SCREEN_RGB333_W; c++){
-				unpack_rgb333_p32[r*SCREEN_RGB333_W + c] = 0000;
+		for(uint16_t r1 = 0; r1 < SCREEN_IDX4_H; r1++){
+			for(uint16_t c8 = 0; c8 < SCREEN_IDX4_W8; c8++){
+				pack_idx4_p32[r1*SCREEN_IDX4_W8 + c8] = 0x00000000;
 			}
 		}
 		
 		
-		
 		// draw the background (the current active screen)
 		for(uint8_t i = 0; i < 16; i++){
-			palette_p32[i] = screen_palletes[gs.current_screen][i];
+			palette_p32[i] = screen_palletes[gs.current_screen == TITLE_SCREEN ? 0 : 1][i];
 		}
 		draw_sprite(
-			screens[gs.current_screen], title_screen__w, title_screen__h, 0, 0
+			screens[gs.current_screen], title_screen__w, title_screen__h - y_padding, 0, y_padding
 		);
 
 		

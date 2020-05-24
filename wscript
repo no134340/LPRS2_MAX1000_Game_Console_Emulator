@@ -65,6 +65,24 @@ def configure(conf):
 def build(bld):
 	bld.recurse('emulator')
 	
+	screen_imgs = sorted(
+		glob.glob('images/*1.png') +
+		glob.glob('images/*2.png') +
+		glob.glob('images/*3.png') +
+		glob.glob('images/*4.png') +
+		glob.glob('images/*5.png') +
+		glob.glob('images/*6.png') +
+		glob.glob('images/*7.png') +
+		glob.glob('images/*8.png')
+	)
+
+	bld(
+		rule = '${PYTHON} ${IMG_TO_SRC} -o ${TGT[0]} ${SRC} ' + \
+			'-f IDX4 -p 0x000000 -v',
+		source = screen_imgs,
+		target = ['screens_idx4.c', 'screens_idx4.h']
+	)
+
 	bld(
 		rule = '${PYTHON} ${IMG_TO_SRC} -o ${TGT[0]} ${SRC} ' + \
 			'-f IDX4 -p 0x000000 -v',
@@ -72,16 +90,9 @@ def build(bld):
 		target = ['title_screen_idx4.c', 'title_screen_idx4.h']
 	)
 
-	bld(
-		rule = '${PYTHON} ${IMG_TO_SRC} -o ${TGT[0]} ${SRC} ' + \
-			'-f IDX4 -p 0x000000 -v',
-		source = 'images/A1_screen.png',
-		target = ['A1_screen_idx4.c', 'A1_screen_idx4.h']
-	)
-
 	bld.program(
 		features = 'cxx',
-		source = ['project.c', 'title_screen_idx4.c', 'A1_screen_idx4.c'],
+		source = ['project.c', 'screens_idx4.c', 'title_screen_idx4.c'],
 		includes = ['build/'],
 		use = 'emulator',
 		target = 'project'
