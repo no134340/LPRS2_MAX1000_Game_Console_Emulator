@@ -68,17 +68,25 @@ typedef struct {
 } point_t;
 
 
-typedef enum {
-	MAP_A1,
-	TITLE_SCREEN
-	// posle dodati ostale screenove
-	// title screen na kraju.
-} current_screen_t;
-
 // pointers to screen "sprites"
+// 2D INDEKSI SCREEN-OVA:
+// A1 - (0, 0), B1 - (0, 1) ITD.
+// 1D INDEKS SA SCREEN SA 2D INDEKSOM (i, j):
+// j*16 + i
+// 16 zato sto ima 16 screenova u jednom redu, redova ima 8
+// (ima 16*8 = 128 screenova ukupno)
+// + jedan title screen
 uint32_t* screens[] = 
 {
-	A1__p, title_screen__p 
+	A1__p, B1__p, C1__p, D1__p, E1__p, F1__p, G1__p, H1__p, I1__p, J1__p, K1__p, L1__p, M1__p, N1__p, O1__p, P1__p,
+	A2__p, B2__p, C2__p, D2__p, E2__p, F2__p, G2__p, H2__p, I2__p, J2__p, K2__p, L2__p, M2__p, N2__p, O2__p, P2__p,
+	A3__p, B3__p, C3__p, D3__p, E3__p, F3__p, G3__p, H3__p, I3__p, J3__p, K3__p, L3__p, M3__p, N3__p, O3__p, P3__p,
+	A4__p, B4__p, C4__p, D4__p, E4__p, F4__p, G4__p, H4__p, I4__p, J4__p, K4__p, L4__p, M4__p, N4__p, O4__p, P4__p,
+	A5__p, B5__p, C5__p, D5__p, E5__p, F5__p, G5__p, H5__p, I5__p, J5__p, K5__p, L5__p, M5__p, N5__p, O5__p, P5__p,
+	A6__p, B6__p, C6__p, D6__p, E6__p, F6__p, G6__p, H6__p, I6__p, J6__p, K6__p, L6__p, M6__p, N6__p, O6__p, P6__p,
+	A7__p, B7__p, C7__p, D7__p, E7__p, F7__p, G7__p, H7__p, I7__p, J7__p, K7__p, L7__p, M7__p, N7__p, O7__p, P7__p,
+	A8__p, B8__p, C8__p, D8__p, E8__p, F8__p, G8__p, H8__p, I8__p, J8__p, K8__p, L8__p, M8__p, N8__p, O8__p, P8__p,
+	title_screen__p 
 };
 
 // pointers to screen palletes 
@@ -91,7 +99,7 @@ uint32_t* screen_palletes[] =
 
 typedef struct {
 	// trenutno prikazani deo mape / ekran
-	current_screen_t current_screen;
+	int current_screen;
 } game_state_t;
 
 
@@ -112,7 +120,7 @@ static inline uint32_t shift_div_with_round_up(uint32_t num, uint32_t shift){
 
 
 
-static void draw_sprite(
+static void draw_background(
 	uint32_t* src_p,
 	uint16_t src_w,
 	uint16_t src_h,
@@ -141,8 +149,6 @@ static void draw_sprite(
 }
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
 
@@ -159,7 +165,8 @@ int main(void) {
 
 	// Game state.
 	game_state_t gs;
-	gs.current_screen = TITLE_SCREEN;
+	// redovni screenovi su od 0-127, 128 je title screen
+	gs.current_screen = 128;
 	int y_padding = 0;
 	
 	while(1){
@@ -173,7 +180,7 @@ int main(void) {
 		
 		if(joypad.start) {
 			// nece sa start screena prelaziti na ovaj deo mape, ovo je samo test
-			gs.current_screen = MAP_A1;
+			gs.current_screen = 0;
 			y_padding = Y_PADDING;
 		}
 		
@@ -205,9 +212,9 @@ int main(void) {
 		
 		// draw the background (the current active screen)
 		for(uint8_t i = 0; i < 16; i++){
-			palette_p32[i] = screen_palletes[gs.current_screen == TITLE_SCREEN ? 0 : 1][i];
+			palette_p32[i] = screen_palletes[gs.current_screen == 128 ? 0 : 1][i];
 		}
-		draw_sprite(
+		draw_background(
 			screens[gs.current_screen], title_screen__w, title_screen__h - y_padding, 0, y_padding
 		);
 
