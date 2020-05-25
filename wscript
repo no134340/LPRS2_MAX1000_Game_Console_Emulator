@@ -73,7 +73,8 @@ def build(bld):
 		glob.glob('images/*5.png') +
 		glob.glob('images/*6.png') +
 		glob.glob('images/*7.png') +
-		glob.glob('images/*8.png')
+		glob.glob('images/*8.png') +
+		glob.glob('images/link_sheet.png')
 	)
 
 	bld(

@@ -57,15 +57,47 @@ typedef struct {
 
 #define Y_PADDING 56 // number of blank rows
 
+#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 30px apart 
+#define LINK_SPRITE_DIM 16 // sprites are 16x16px (the small ones without the sword)
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
+
 typedef struct {
 	uint16_t x;
 	uint16_t y;
 } point_t;
+
+
+// Link orientations in the order they are in the sprite sheet
+// Every orientation has 2 sprites
+// In this way we can index the upper left corner of a particular sprite as follows:
+// LEFT 0:
+// link_sheet__p[(0*LINK_ORIENTATION_OFFSET)*link_sheet__w +  LEFT*LINK_ORIENATION_OFFSET]
+// UP 1:
+// link_sheet__p[(1*LINK_ORIENTATION_OFFSET)*link_sheet__w +  UP*LINK_ORIENATION_OFFSET]
+typedef enum {
+	DOWN,
+	LEFT,
+	UP,
+	RIGHT
+} link_orientation_t;
+
+typedef struct {
+	link_orientation_t orientation;
+	int orientation_state;
+	uint8_t delay;
+} link_anim_t;
+
+typedef struct {	
+	// upper left corner of the link sprite
+	link_anim_t anim;
+	point_t pos;
+} link_t;
+
 
 
 // pointers to screen "sprites"
@@ -94,12 +126,14 @@ uint32_t* screen_palletes[] =
 {
 	// izgleda da je moja izmena u skripti pokupila ime poslednjeg skrina pa je po
 	// njemu nadenula ime paleti. it's not a bug it's a feature/
-	palette_title_screen, palette_P8
+	palette_title_screen, palette_link_sheet
 };
 
 typedef struct {
 	// trenutno prikazani deo mape / ekran
 	int current_screen;
+	// linkic
+	link_t link;
 } game_state_t;
 
 
@@ -144,8 +178,37 @@ static void draw_background(
 			pack_idx4_p32[dst_idx] = pixels;
 		}
 	}
+}
+
+
+void draw_sprite_from_atlas(
+	uint32_t* sprite_atlas,
+	uint16_t atlas_w,
+	uint16_t src_x,
+	uint16_t src_y,
+	uint16_t w,
+	uint16_t h,
+	uint16_t dst_x,
+	uint16_t dst_y
+) {
+	uint16_t dst_x8 = shift_div_with_round_down(dst_x, 3);
+	uint16_t src_w8 = shift_div_with_round_up(w, 3);
+	uint16_t atlas_w8 = shift_div_with_round_up(atlas_w, 3);
+	uint16_t src_x8 = shift_div_with_round_down(src_x, 3);
 	
-	
+
+	for(uint16_t y = 0; y < h; y++){
+		for(uint16_t x8 = 0; x8 < src_w8; x8++){
+			uint32_t src_idx = 
+				(src_y+y)*atlas_w8 +
+				(src_x8+x8);
+			uint32_t dst_idx = 
+				(dst_y+y)*SCREEN_IDX4_W8 +
+				(dst_x8+x8);
+			uint32_t pixel = sprite_atlas[src_idx];
+			pack_idx4_p32[dst_idx] = pixel;
+		}
+	}
 }
 
 
@@ -168,7 +231,15 @@ int main(void) {
 	// redovni screenovi su od 0-127, 128 je title screen
 	gs.current_screen = 128;
 	int y_padding = 0;
-	
+
+	gs.link.anim.orientation = LEFT;
+	gs.link.anim.orientation_state = 0;
+	gs.link.anim.delay = 0;
+	gs.link.pos.x = 128/2;
+	gs.link.pos.y = 128;
+	int draw_link = 0;
+
+	int frame = 0;
 	while(1){
 		
 		/*
@@ -177,18 +248,59 @@ int main(void) {
 		
 		/////////////////////////////////////
 		// Poll controls.
-		
+
+		int mov_x = 0;
+		int mov_y = 0;
+	
+		frame += 1;
+		frame &= 8-1;
+
 		if(joypad.start) {
 			// nece sa start screena prelaziti na ovaj deo mape, ovo je samo test
 			gs.current_screen = 0;
 			y_padding = Y_PADDING;
+			draw_link = 1;
+			// draw the background (the current active screen)
+			for(uint8_t i = 0; i < 16; i++){
+				palette_p32[i] = palette_link_sheet[i];
+			}
 		}
-		
+
+		if(joypad.left) {
+			mov_x = -1;
+		}
+		else if(joypad.right) {
+			mov_x = +1;
+		}
+		else if(joypad.up) {
+			mov_y = -1;
+		}
+		else if(joypad.down) {
+			mov_y = +1;
+		}
 		/////////////////////////////////////
 		// Gameplay.
 		
-
-		
+		// don't let link get through the walls
+		if(mov_x + gs.link.pos.x < 0) {
+			gs.link.pos.x = 0;
+		}
+		else if (mov_x + gs.link.pos.x >= title_screen__w - LINK_SPRITE_DIM) {
+			gs.link.pos.x = title_screen__w - LINK_SPRITE_DIM;
+		}
+		else {
+			gs.link.pos.x += mov_x;
+		}
+		if(mov_y + gs.link.pos.y < Y_PADDING) {
+			gs.link.pos.y = Y_PADDING;
+		}
+		else if (mov_y + gs.link.pos.y >= title_screen__h - LINK_SPRITE_DIM) {
+			gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM;
+		}
+		else {
+			if(!frame)
+			gs.link.pos.y += 8*mov_y;
+		}
 		
 		
 		
@@ -210,14 +322,21 @@ int main(void) {
 		}
 		
 		
-		// draw the background (the current active screen)
-		for(uint8_t i = 0; i < 16; i++){
-			palette_p32[i] = screen_palletes[gs.current_screen == 128 ? 0 : 1][i];
-		}
+		
 		draw_background(
 			screens[gs.current_screen], title_screen__w, title_screen__h - y_padding, 0, y_padding
 		);
 
+		if(draw_link) {
+			draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				LINK_SPRITE_DIM, LINK_SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y
+		);
+		}
 		
 	}
 
