@@ -57,7 +57,7 @@ typedef struct {
 
 #define Y_PADDING 56 // number of blank rows
 
-#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 30px apart 
+#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 32px apart 
 #define LINK_SPRITE_DIM 16 // sprites are 16x16px (the small ones without the sword)
 
 
