@@ -55,10 +55,12 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 // Game config.
 
-#define Y_PADDING 56 // number of blank rows
+#define Y_PADDING 56 // number of blank rows (treba nam crno iznad ekrana za HUD)
 
-#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 32px apart 
-#define LINK_SPRITE_DIM 16 // sprites are 16x16px (the small ones without the sword)
+#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 24px apart (ja sam tako nacrtala u gimp-u da bude lakše da odsecamo linkića iz sheet-a, oni bez mača)
+#define LINK_SPRITE_DIM 16 // sprites are 16x16px (oni mali bez mača. oni s mačem su 32px)
+						   // nismo toliko uznapredovali u razvoju igrice da pišem i konstante za taj poslednji red gde su linkići s mačem
+						   // ukratko 16px link + 8px prazno + 32px link + 8px prazno + 16px link + 8px prazno + 32px link
 
 
 
@@ -79,6 +81,7 @@ typedef struct {
 // link_sheet__p[(0*LINK_ORIENTATION_OFFSET)*link_sheet__w +  LEFT*LINK_ORIENATION_OFFSET]
 // UP 1:
 // link_sheet__p[(1*LINK_ORIENTATION_OFFSET)*link_sheet__w +  UP*LINK_ORIENATION_OFFSET]
+// nije kao da cemo ovako indeksirati, ali da znate kako su raspoređeni
 typedef enum {
 	DOWN,
 	LEFT,
@@ -94,8 +97,8 @@ typedef struct {
 
 typedef struct {	
 	// upper left corner of the link sprite
-	link_anim_t anim;
 	point_t pos;
+	link_anim_t anim;
 } link_t;
 
 
@@ -124,15 +127,15 @@ uint32_t* screens[] =
 // pointers to screen palletes 
 uint32_t* screen_palletes[] = 
 {
-	// izgleda da je moja izmena u skripti pokupila ime poslednjeg skrina pa je po
-	// njemu nadenula ime paleti. it's not a bug it's a feature/
+	// izgleda da je moja izmena u img_to_src.py skripti pokupila ime poslednje slike pa je po
+	// njoj nadenula ime paleti. it's not a bug it's a feature
 	palette_title_screen, palette_link_sheet
 };
 
 typedef struct {
 	// trenutno prikazani deo mape / ekran
 	int current_screen;
-	// linkic
+	// linkić
 	link_t link;
 } game_state_t;
 
@@ -165,7 +168,6 @@ static void draw_background(
 	
 	uint16_t dst_x8 = shift_div_with_round_down(dst_x, 3);
 	uint16_t src_w8 = shift_div_with_round_up(src_w, 3);
-	
 	
 	
 	for(uint16_t y = 0; y < src_h; y++){
@@ -206,7 +208,18 @@ void draw_sprite_from_atlas(
 				(dst_y+y)*SCREEN_IDX4_W8 +
 				(dst_x8+x8);
 			uint32_t pixel = sprite_atlas[src_idx];
-			pack_idx4_p32[dst_idx] = pixel;
+			for(uint8_t i = 0; i < 8; i++) {
+				// provera svakog piksela da li je crn (tj. da li je index 0)
+				uint32_t px = pixel & (0b1111<<4*i);
+				// ako jeste, ne crtaj ga!!
+				if(px == 0) {
+					continue;
+				}
+				// ako nije, zacrni pozadinu na tom delu (napisi 0 jer je index crne 0)
+				pack_idx4_p32[dst_idx] &= ~(0b1111u<<4*i);
+				// i onda lepo prepisi index boje za taj pixel
+				pack_idx4_p32[dst_idx] |= px;
+			}
 		}
 	}
 }
@@ -239,11 +252,12 @@ int main(void) {
 	gs.link.pos.y = 128;
 	int draw_link = 0;
 
-	int frame = 0;
 	while(1){
 		
 		/*
 			Za sada samo isprobavamo crtkanje intro screen-a na ekran.
+			I kada korisnik pritisne s kao start, da se otvori mapa A1 sa velike mape.
+			I da se nacrta Link na njoj. Za sada samo može da lebdi okolo.
 		*/
 		
 		/////////////////////////////////////
@@ -252,8 +266,6 @@ int main(void) {
 		int mov_x = 0;
 		int mov_y = 0;
 	
-		frame += 1;
-		frame &= 8-1;
 
 		if(joypad.start) {
 			// nece sa start screena prelaziti na ovaj deo mape, ovo je samo test
@@ -281,7 +293,9 @@ int main(void) {
 		/////////////////////////////////////
 		// Gameplay.
 		
-		// don't let link get through the walls
+		// Da ne prođe korz ivice ekrana
+		// Link lepo lebdi po y-osi ali po x-osi korak je po 8px zbog pakovanog moda.
+		// Dok ne smislim kako lepo da prebacim na unpacked mod ostaje ovako
 		if(mov_x + gs.link.pos.x < 0) {
 			gs.link.pos.x = 0;
 		}
@@ -298,10 +312,8 @@ int main(void) {
 			gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM;
 		}
 		else {
-			if(!frame)
-			gs.link.pos.y += 8*mov_y;
+			gs.link.pos.y += mov_y;
 		}
-		
 		
 		
 		/////////////////////////////////////
