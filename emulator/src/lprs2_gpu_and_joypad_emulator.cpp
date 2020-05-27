@@ -233,7 +233,7 @@ public:
 				joypad_mem_map.s.z = 1;
 				break;
 			case Keyboard::S:
-				joypad_mem_map.s.start = 1;
+				joypad_mem_map.s.start = s;
 				break;
 			case Keyboard::L:
 				joypad_mem_map.s.l = 1;
