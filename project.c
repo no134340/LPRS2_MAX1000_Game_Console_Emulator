@@ -265,7 +265,8 @@ int main(void) {
 	while(1){
 		
 		/*
-			Za sada samo isprobavamo crtkanje intro screen-a na ekran.
+			Za sada samo:
+			Crtkanje intro screen-a na ekran.
 			I kada korisnik pritisne s kao start, da se otvori mapa A1 sa velike mape.
 			I da se nacrta Link na njoj. Za sada Link samo može da lebdi okolo.
 		*/
@@ -311,7 +312,7 @@ int main(void) {
 		/////////////////////////////////////
 		// Gameplay.
 		
-		// Da ne prođe korz ivice ekrana
+		// Da ne prođe kroz ivice ekrana
 		// Link lepo lebdi po svim osama sada.
 		// Jos da resimo problem da updatujemo background samo kada se Link pomeri na toj staroj poziciji
 		if(mov_x + gs.link.pos.x < 0) {
