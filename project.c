@@ -242,12 +242,15 @@ static void update_background (
 	// indeksi u matrici sa sprajtom moraju biti deljivi sa 8
 	if((src_x % 8) != 0) {
 		uint16_t rem = src_x % 8;
+		
 		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x - rem, src_y, w, h, dst_x - rem, dst_y, 0);
+		if(src_x + 16 - rem + w > title_screen__w) {
+			w -= src_x + 16 - rem + w - title_screen__w;
+		}
 		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x + 16 - rem, src_y, w, h, dst_x + 16 - rem, dst_y, 0);
-		//draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x + 16 - rem, src_y, w/2, h, dst_x + 16 - rem, dst_y, 0);
 	} 
 	else {
-		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x, src_y, w, h, dst_x, dst_y, 0);
+			draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x, src_y, w, h, dst_x, dst_y, 0);
 	}
 
 }
