@@ -62,7 +62,7 @@ typedef struct {
 						   // nismo toliko uznapredovali u razvoju igrice da pišem i konstante za taj poslednji red gde su linkići s mačem
 						   // ukratko 16px link + 8px prazno + 32px link + 8px prazno + 16px link + 8px prazno + 32px link
 
-
+#define ANIM_DELAY 10
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
@@ -290,7 +290,19 @@ int main(void) {
 
 	// spreci linkica da se crta po title-screen-u
 
+	int counter = 0;
+
 	while(1){
+		counter++;
+		if(counter == ANIM_DELAY)
+		{
+			gs.link.anim.orientation_state = 1;
+		}
+		if(counter == ANIM_DELAY*2)
+		{
+			gs.link.anim.orientation_state = 0;
+			counter = 0;
+		}
 		
 		/*
 			Za sada samo:
@@ -330,20 +342,24 @@ int main(void) {
 
 		if(started) {
 			if(joypad.left) {
-			mov_x = -1;
-			draw_link = 1;
+				mov_x = -1;
+				draw_link = 1;
+				gs.link.anim.orientation = LEFT;
 			}
 			else if(joypad.right) {
 				mov_x = +1;
 				draw_link = 1;
+				gs.link.anim.orientation = RIGHT;
 			}
 			if(joypad.up) {
 				mov_y = -1;
 				draw_link = 1;
+				gs.link.anim.orientation = UP;
 			}
 			else if(joypad.down) {
 				mov_y = +1;
 				draw_link = 1;
+				gs.link.anim.orientation = DOWN;
 			}
 
 			if(mov_x + gs.link.pos.x < 0) {
