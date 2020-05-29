@@ -190,7 +190,6 @@ static void draw_background(
 	}
 }
 
-
 static void draw_sprite_from_atlas(
 	uint32_t* sprite_atlas,
 	uint16_t atlas_w,
@@ -230,6 +229,30 @@ static void draw_sprite_from_atlas(
 }
 
 
+static void update_background (
+	uint32_t* sprite_atlas,
+	uint16_t atlas_w,
+	uint16_t src_x,
+	uint16_t src_y,
+	uint16_t w,
+	uint16_t h,
+	uint16_t dst_x,
+	uint16_t dst_y
+) {
+	// indeksi u matrici sa sprajtom moraju biti deljivi sa 8
+	if((src_x % 8) != 0) {
+		uint16_t rem = src_x % 8;
+		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x - rem, src_y, w, h, dst_x - rem, dst_y, 0);
+		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x + 16 - rem, src_y, w, h, dst_x + 16 - rem, dst_y, 0);
+		//draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x + 16 - rem, src_y, w/2, h, dst_x + 16 - rem, dst_y, 0);
+	} 
+	else {
+		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x, src_y, w, h, dst_x, dst_y, 0);
+	}
+
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
 
@@ -260,7 +283,9 @@ int main(void) {
 
 	volatile int draw_link = 0;
 	volatile int draw_bg = 1;
+	int started = 0;
 
+	// spreci linkica da se crta po title-screen-u
 
 	while(1){
 		
@@ -291,48 +316,54 @@ int main(void) {
 				palette_p32[i] = palette_link_sheet[i];
 			}
 			draw_bg = 1;
-		}
-
-		if(joypad.left) {
-			mov_x = -1;
-			draw_link = 1;
-		}
-		else if(joypad.right) {
-			mov_x = +1;
-			draw_link = 1;
-		}
-		if(joypad.up) {
-			mov_y = -1;
-			draw_link = 1;
-		}
-		else if(joypad.down) {
-			mov_y = +1;
-			draw_link = 1;
+			started = 1;
 		}
 		/////////////////////////////////////
 		// Gameplay.
 		
 		// Da ne prođe kroz ivice ekrana
 		// Link lepo lebdi po svim osama sada.
-		// Jos da resimo problem da updatujemo background samo kada se Link pomeri na toj staroj poziciji
-		if(mov_x + gs.link.pos.x < 0) {
+		
+
+		if(started) {
+			if(joypad.left) {
+			mov_x = -1;
+			draw_link = 1;
+			}
+			else if(joypad.right) {
+				mov_x = +1;
+				draw_link = 1;
+			}
+			if(joypad.up) {
+				mov_y = -1;
+				draw_link = 1;
+			}
+			else if(joypad.down) {
+				mov_y = +1;
+				draw_link = 1;
+			}
+
+			if(mov_x + gs.link.pos.x < 0) {
 			gs.link.pos.x = 0;
+			}
+			else if (mov_x + gs.link.pos.x >= title_screen__w - LINK_SPRITE_DIM) {
+				gs.link.pos.x = title_screen__w - LINK_SPRITE_DIM;
+			}
+			else {
+				gs.link.pos.x += mov_x;
+			}
+			if(mov_y + gs.link.pos.y < Y_PADDING) {
+				gs.link.pos.y = Y_PADDING;
+			}
+			else if (mov_y + gs.link.pos.y >= title_screen__h - LINK_SPRITE_DIM) {
+				gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM;
+			}
+			else {
+				gs.link.pos.y += mov_y;
+			}
+
 		}
-		else if (mov_x + gs.link.pos.x >= title_screen__w - LINK_SPRITE_DIM) {
-			gs.link.pos.x = title_screen__w - LINK_SPRITE_DIM;
-		}
-		else {
-			gs.link.pos.x += mov_x;
-		}
-		if(mov_y + gs.link.pos.y < Y_PADDING) {
-			gs.link.pos.y = Y_PADDING;
-		}
-		else if (mov_y + gs.link.pos.y >= title_screen__h - LINK_SPRITE_DIM) {
-			gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM;
-		}
-		else {
-			gs.link.pos.y += mov_y;
-		}
+		
 		
 		
 		/////////////////////////////////////
@@ -365,17 +396,15 @@ int main(void) {
 		
 
 		if(draw_link == 1) {
-
-			// Ovo iz nekog razloga ne radi.
-			/*draw_sprite_from_atlas(
+			// Apdejtuj samo pozadinu oko Linka.
+			update_background(
 				screens[gs.current_screen], title_screen__w,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y - Y_PADDING,
 				LINK_SPRITE_DIM, LINK_SPRITE_DIM,
 				gs.link.old_pos.x,
-				gs.link.old_pos.y,
-				0
-			);*/
+				gs.link.old_pos.y
+			);
 
 			gs.link.old_pos.x = gs.link.pos.x;
 			gs.link.old_pos.y = gs.link.pos.y;
