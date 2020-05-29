@@ -387,7 +387,7 @@ int main(void) {
 		// Na žalost, trenutno problem razmazivanja Linka po ekranu
 		// dok se kreće rešavamo tako sto svaki put crtamo pozadinu
 		// TODO: uraditi da precrtava samo 16x16px gde je bio stajao link
-		if(draw_bg == 1 || draw_link == 1) {
+		if(draw_bg == 1) {
 			draw_background(
 			screens[gs.current_screen], title_screen__w, title_screen__h - y_padding, 0, y_padding
 			);
