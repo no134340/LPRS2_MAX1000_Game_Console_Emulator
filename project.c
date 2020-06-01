@@ -218,7 +218,8 @@ static void draw_sprite_from_atlas(
 			for(uint8_t i = 0; i < 8; i++) {
 				// provera svakog piksela da li je crn (tj. da li je index 0)
 				uint32_t px = (pixel>>(4*i))&0b1111;
-				// ako jeste, ne crtaj ga!!
+				// ako jeste, ne crtaj ga!! (samo ako je sprajt. ako je pozadina,
+				// onda je to deo pozadine i treba crtati taj crni piksel)
 				if(px == 0 && sprite == 1) {
 					continue;
 				}
@@ -243,11 +244,10 @@ static void update_background (
 	if((src_x % 8) != 0) {
 		uint16_t rem = src_x % 8;
 		
-		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x - rem, src_y, w, h, dst_x - rem, dst_y, 0);
-		if(src_x + 16 - rem + w > title_screen__w) {
-			w -= src_x + 16 - rem + w - title_screen__w;
+		if(src_x - rem + w > title_screen__w) {
+			w -= src_x - rem + w - title_screen__w;
 		}
-		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x + 16 - rem, src_y, w, h, dst_x + 16 - rem, dst_y, 0);
+		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x - rem, src_y, w + 8, h, dst_x - rem, dst_y, 0);
 	} 
 	else {
 			draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x, src_y, w, h, dst_x, dst_y, 0);
@@ -296,11 +296,7 @@ int main(void) {
 		counter++;
 		if(counter == ANIM_DELAY)
 		{
-			gs.link.anim.orientation_state = 1;
-		}
-		if(counter == ANIM_DELAY*2)
-		{
-			gs.link.anim.orientation_state = 0;
+			gs.link.anim.orientation_state ^= 1;
 			counter = 0;
 		}
 		
@@ -308,7 +304,6 @@ int main(void) {
 			Za sada samo:
 			Crtkanje intro screen-a na ekran.
 			I kada korisnik pritisne s kao start, da se otvori mapa A1 sa velike mape.
-			I da se nacrta Link na njoj. Za sada Link samo može da lebdi okolo.
 		*/
 		
 		/////////////////////////////////////
