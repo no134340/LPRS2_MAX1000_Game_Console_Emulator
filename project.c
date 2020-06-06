@@ -146,6 +146,7 @@ typedef struct {
 } game_state_t;
 
 
+uint8_t *map;
 
 static inline uint32_t shift_div_with_round_down(uint32_t num, uint32_t shift){
 	uint32_t d = num >> shift;
@@ -257,7 +258,7 @@ static void draw_background(
 
 
 static void update_background (
-	uint32_t* sprite_atlas,
+	uint8_t* sprite_atlas,
 	uint16_t atlas_w,
 	uint16_t src_x,
 	uint16_t src_y,
@@ -266,20 +267,73 @@ static void update_background (
 	uint16_t dst_x,
 	uint16_t dst_y
 ) {
-	// indeksi u matrici sa sprajtom moraju biti deljivi sa 8
-	if((src_x % 8) != 0) {
-		uint16_t rem = src_x % 8;
+	// indeksi u matrici sa tile-ovima moraju biti deljivi sa 16 (da bi smo uzeli ceo tile)
+	if((src_x % 16) != 0 || (src_y % 16) != 0 ) {
+		uint16_t rem_x = src_x % 16;
+		uint16_t rem_y = src_y % 16;
 		
-		if(src_x - rem + w > title_screen__w) {
-			w -= src_x - rem + w - title_screen__w;
+		uint16_t tile_ind_x = (src_x - rem_x) / 16;
+		uint16_t tile_ind_y = (src_y - rem_y) / 16;
+
+		// upper left
+		uint8_t tile_ind = map[tile_ind_y*16 + tile_ind_x];
+		uint16_t ind_vert = tile_ind / 18;
+		uint16_t ind_horiz = tile_ind % 18;
+		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x - rem_x, dst_y - rem_y, 0);
+
+		
+		//upper right
+		if(src_x < title_screen__w - 16) {
+			tile_ind_x += 1;
+			tile_ind_y += 0;
+			tile_ind = map[tile_ind_y*16 + tile_ind_x];
+			ind_vert = tile_ind / 18;
+			ind_horiz = tile_ind % 18;
+			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x + 16 - rem_x, dst_y - rem_y, 0);
+			tile_ind_x -= 1;
+			tile_ind_y -= 0;
 		}
-		draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x - rem, src_y, w + 8, h, dst_x - rem, dst_y, 0);
-	} 
+
+		// lower left
+		if(src_y < Y_PADDING + title_screen__h - 9 - 16)
+		{
+			tile_ind_x += 0;
+			tile_ind_y += 1;
+			tile_ind = map[tile_ind_y*16 + tile_ind_x];
+			ind_vert = tile_ind / 18;
+			ind_horiz = tile_ind % 18;
+			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x  - rem_x, dst_y + 16 - rem_y, 0);
+			tile_ind_x -= 0;
+			tile_ind_y -= 1;
+		}
+
+		// lower right
+		if(src_y < Y_PADDING + title_screen__h - 2*16 - 9 && src_x < title_screen__w - 16)
+		{
+			tile_ind_x += 1;
+			tile_ind_y += 1;
+			tile_ind = map[tile_ind_y*16 + tile_ind_x];
+			ind_vert = tile_ind / 18;
+			ind_horiz = tile_ind % 18;
+			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x + 16 - rem_x, dst_y + 16 - rem_y, 0);
+			tile_ind_x -= 1;
+			tile_ind_y -= 1;
+		}
+	}
 	else {
-			draw_sprite_from_atlas(sprite_atlas, atlas_w, src_x, src_y, w, h, dst_x, dst_y, 0);
+		uint16_t tile_ind_x = (src_x ) / 16;
+		uint16_t tile_ind_y = (src_y ) / 16;
+
+		// upper left
+		uint8_t tile_ind = map[tile_ind_y*16 + tile_ind_x];
+		uint16_t ind_vert = tile_ind / 18;
+		uint16_t ind_horiz = tile_ind % 18;
+		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x, dst_y, 0);
 	}
 
 }
+
+
 
 uint8_t A8__p[] = {
 55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,
@@ -302,6 +356,7 @@ int main(void) {
 	// Setup.
 	gpu_p32[0] = 2; // IDX4 mode
 	gpu_p32[1] = 0; // Unpacked mode.
+	map = A8__p;
 
 	// Copy palette.
 	for(uint8_t i = 0; i < 16; i++){
@@ -317,8 +372,8 @@ int main(void) {
 	gs.link.anim.orientation = LEFT;
 	gs.link.anim.orientation_state = 0;
 	gs.link.anim.delay = 0;
-	gs.link.pos.x = 128;
-	gs.link.pos.y = 128;
+	gs.link.pos.x = 32;
+	gs.link.pos.y = Y_PADDING + 2 + 64;
 	gs.link.old_pos.x = gs.link.pos.x;
 	gs.link.old_pos.y = gs.link.pos.y;
 
@@ -403,8 +458,8 @@ int main(void) {
 			if(mov_y + gs.link.pos.y < Y_PADDING) {
 				gs.link.pos.y = Y_PADDING;
 			}
-			else if (mov_y + gs.link.pos.y >= title_screen__h - LINK_SPRITE_DIM) {
-				gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM;
+			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - LINK_SPRITE_DIM) {
+				gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM - 9;
 			}
 			else {
 				gs.link.pos.y += mov_y;
@@ -448,14 +503,14 @@ int main(void) {
 
 		if(draw_link == 1) {
 			// Apdejtuj samo pozadinu oko Linka.
-			/*update_background(
+			update_background(
 				A8__p, 16,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y - Y_PADDING,
 				LINK_SPRITE_DIM, LINK_SPRITE_DIM,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y
-			);*/
+			);
 
 			gs.link.old_pos.x = gs.link.pos.x;
 			gs.link.old_pos.y = gs.link.pos.y;
