@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "title_screen_idx4.h"
 #include "screens_idx4.h"
+#include "screen_tile_index.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,11 +59,16 @@ typedef struct {
 #define Y_PADDING 56 // number of blank rows (treba nam crno iznad ekrana za HUD)
 
 #define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 24px apart (ja sam tako nacrtala u gimp-u da bude lakše da odsecamo linkića iz sheet-a, oni bez mača)
-#define LINK_SPRITE_DIM 16 // sprites are 16x16px (oni mali bez mača. oni s mačem su 32px)
+#define SPRITE_DIM 16 // sprites are 16x16px (oni mali bez mača. oni s mačem su 32px)
 						   // nismo toliko uznapredovali u razvoju igrice da pišem i konstante za taj poslednji red gde su linkići s mačem
 						   // ukratko 16px link + 8px prazno + 32px link + 8px prazno + 16px link + 8px prazno + 32px link
+					  // i tile-ove imaju dimenzije 16x16
 
 #define ANIM_DELAY 10
+
+#define TILES_H 16 // broj tile-ova koji staje u svaki red
+
+#define TILES_V 10 // broj tile-ova koji staje u svaku vrstu
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
@@ -99,7 +105,6 @@ typedef struct {
 	// upper left corner of the link sprite
 	point_t pos;
 	link_anim_t anim;
-	// ovo iskoristiti pri crtanju dela pozadine gde je bio link. Kada to proradi.
 	point_t old_pos;
 } link_t;
 
@@ -114,7 +119,7 @@ typedef struct {
 // (ima 16*8 = 128 screenova ukupno)
 // + jedan title screen
 // ovo koristimo kada prosleđujemo funkciji za crtkanje pozadine šta da crta
-/*uint32_t* screens[] = 
+uint8_t* screens[] = 
 {
 	A1__p, B1__p, C1__p, D1__p, E1__p, F1__p, G1__p, H1__p, I1__p, J1__p, K1__p, L1__p, M1__p, N1__p, O1__p, P1__p,
 	A2__p, B2__p, C2__p, D2__p, E2__p, F2__p, G2__p, H2__p, I2__p, J2__p, K2__p, L2__p, M2__p, N2__p, O2__p, P2__p,
@@ -124,14 +129,13 @@ typedef struct {
 	A6__p, B6__p, C6__p, D6__p, E6__p, F6__p, G6__p, H6__p, I6__p, J6__p, K6__p, L6__p, M6__p, N6__p, O6__p, P6__p,
 	A7__p, B7__p, C7__p, D7__p, E7__p, F7__p, G7__p, H7__p, I7__p, J7__p, K7__p, L7__p, M7__p, N7__p, O7__p, P7__p,
 	A8__p, B8__p, C8__p, D8__p, E8__p, F8__p, G8__p, H8__p, I8__p, J8__p, K8__p, L8__p, M8__p, N8__p, O8__p, P8__p,
-	title_screen__p 
-};*/
+};
 
 // pokazivači na palete
 // Intro screen i redovni screenovi sa mape i link imaju zajedno
 // 17 boja. Tužno. Zato smo razdvojili posebnu paletu za intro screen
-// i mapu i linka. 
-uint32_t* screen_palletes[] = 
+// i mapu i linka. Zašto ovo postoji kad nije potrebno, ne znam. 
+uint32_t* screen_palettes[] = 
 {
 	// izgleda da je moja izmena u img_to_src.py skripti pokupila ime poslednje slike pa je po
 	// njoj nadenula ime paleti. it's not a bug it's a feature
@@ -145,8 +149,6 @@ typedef struct {
 	link_t link;
 } game_state_t;
 
-
-uint8_t *map;
 
 static inline uint32_t shift_div_with_round_down(uint32_t num, uint32_t shift){
 	uint32_t d = num >> shift;
@@ -213,20 +215,113 @@ static void draw_tiles(
 	
 	for(uint16_t y = 0; y < 10; y++){
 		for(uint16_t x = 0; x < 16; x++){
-			uint8_t ind = src_p[y*16 + x];
+			uint8_t ind = src_p[y*SPRITE_DIM + x];
+			/*
+				U python skripti za pravljenje indeksa tile-ova
+				stavila sam da stavi kao indeks 144 ukoliko tile
+				nije pronađen u tile-sheetu..... Ovo bi trebalo
+				rešiti nekako kasnije. Za sada uzme onaj skroz crni tile.
+			*/
 			if(ind == 144) {
-				continue;
+				ind = 22;
 			}
 			uint16_t ind_vert = ind / src_w;
 			uint16_t ind_horiz = ind % src_w;
 			draw_sprite_from_atlas(
-				tiles__p, tiles__w, ind_horiz*16, ind_vert*16, 16, 16, x*16, (y*16+dst_y), 0
+				tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, SPRITE_DIM, SPRITE_DIM, x*SPRITE_DIM, (y*SPRITE_DIM+dst_y), 0
 			);
 		}
 	}
 }
 
 
+
+static void update_background (
+	uint8_t* sprite_atlas,
+	uint16_t atlas_w,
+	uint16_t src_x,
+	uint16_t src_y,
+	uint16_t w,
+	uint16_t h,
+	uint16_t dst_x,
+	uint16_t dst_y
+) {
+	// indeksi u matrici sa tile-ovima moraju biti deljivi sa veličinom tile-a (da bi smo uzeli ceo tile)
+	/*
+		Ako ovo nije slušaj, naš link će preklopiti makar 4 tile-a u najgorem slučaju,
+		pa moramo iscrtati sva 4.
+	*/
+	if((src_x % SPRITE_DIM) != 0 || (src_y % SPRITE_DIM) != 0 ) {
+		uint16_t rem_x = src_x % SPRITE_DIM;
+		uint16_t rem_y = src_y % SPRITE_DIM;
+		
+		uint16_t tile_ind_x = (src_x - rem_x) / SPRITE_DIM;
+		uint16_t tile_ind_y = (src_y - rem_y) / SPRITE_DIM;
+
+		// upper left
+		uint8_t tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+		uint16_t ind_vert = tile_ind / tile_num_x;
+		uint16_t ind_horiz = tile_ind % tile_num_x;
+		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x - rem_x, dst_y - rem_y, 0);
+
+		
+		//upper right
+		if(src_x < title_screen__w - SPRITE_DIM) {
+			tile_ind_x += 1;
+			tile_ind_y += 0;
+			tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+			ind_vert = tile_ind / tile_num_x;
+			ind_horiz = tile_ind % tile_num_x;
+			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + SPRITE_DIM - rem_x, dst_y - rem_y, 0);
+			tile_ind_x -= 1;
+			tile_ind_y -= 0;
+		}
+
+		// lower left
+		if(src_y < Y_PADDING + title_screen__h - 8 - SPRITE_DIM)
+		{
+			tile_ind_x += 0;
+			tile_ind_y += 1;
+			tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+			ind_vert = tile_ind / tile_num_x;
+			ind_horiz = tile_ind % tile_num_x;
+			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM,ind_vert*SPRITE_DIM, w, h, dst_x  - rem_x, dst_y + SPRITE_DIM - rem_y, 0);
+			tile_ind_x -= 0;
+			tile_ind_y -= 1;
+		}
+
+		// lower right
+		if(src_y < Y_PADDING + title_screen__h - SPRITE_DIM - 8 && src_x < title_screen__w - SPRITE_DIM)
+		{
+			tile_ind_x += 1;
+			tile_ind_y += 1;
+			tile_ind = sprite_atlas[tile_ind_y*16 + tile_ind_x];
+			ind_vert = tile_ind / tile_num_x;
+			ind_horiz = tile_ind % tile_num_x;
+			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + SPRITE_DIM - rem_x, dst_y + SPRITE_DIM - rem_y, 0);
+			tile_ind_x -= 1;
+			tile_ind_y -= 1;
+		}
+	}
+	else {
+		/*
+			Ako jesu i x i y položaj deljivi sa veličinom tile-a,
+			onda link preklapa samo 1 tile i crtamo samo njega.
+		*/
+		uint16_t tile_ind_x = src_x / SPRITE_DIM;
+		uint16_t tile_ind_y = src_y / SPRITE_DIM;
+
+		uint8_t tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+		uint16_t ind_vert = tile_ind / tile_num_x;
+		uint16_t ind_horiz = tile_ind % tile_num_x;
+		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x, dst_y, 0);
+	}
+
+}
+
+
+
+// ovo je za crtanje title intro screen-a
 static void draw_background(
 	uint32_t* src_p,
 	uint16_t src_w,
@@ -256,98 +351,6 @@ static void draw_background(
 }
 
 
-
-static void update_background (
-	uint8_t* sprite_atlas,
-	uint16_t atlas_w,
-	uint16_t src_x,
-	uint16_t src_y,
-	uint16_t w,
-	uint16_t h,
-	uint16_t dst_x,
-	uint16_t dst_y
-) {
-	// indeksi u matrici sa tile-ovima moraju biti deljivi sa 16 (da bi smo uzeli ceo tile)
-	if((src_x % 16) != 0 || (src_y % 16) != 0 ) {
-		uint16_t rem_x = src_x % 16;
-		uint16_t rem_y = src_y % 16;
-		
-		uint16_t tile_ind_x = (src_x - rem_x) / 16;
-		uint16_t tile_ind_y = (src_y - rem_y) / 16;
-
-		// upper left
-		uint8_t tile_ind = map[tile_ind_y*16 + tile_ind_x];
-		uint16_t ind_vert = tile_ind / 18;
-		uint16_t ind_horiz = tile_ind % 18;
-		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x - rem_x, dst_y - rem_y, 0);
-
-		
-		//upper right
-		if(src_x < title_screen__w - 16) {
-			tile_ind_x += 1;
-			tile_ind_y += 0;
-			tile_ind = map[tile_ind_y*16 + tile_ind_x];
-			ind_vert = tile_ind / 18;
-			ind_horiz = tile_ind % 18;
-			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x + 16 - rem_x, dst_y - rem_y, 0);
-			tile_ind_x -= 1;
-			tile_ind_y -= 0;
-		}
-
-		// lower left
-		if(src_y < Y_PADDING + title_screen__h - 9 - 16)
-		{
-			tile_ind_x += 0;
-			tile_ind_y += 1;
-			tile_ind = map[tile_ind_y*16 + tile_ind_x];
-			ind_vert = tile_ind / 18;
-			ind_horiz = tile_ind % 18;
-			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x  - rem_x, dst_y + 16 - rem_y, 0);
-			tile_ind_x -= 0;
-			tile_ind_y -= 1;
-		}
-
-		// lower right
-		if(src_y < Y_PADDING + title_screen__h - 2*16 - 9 && src_x < title_screen__w - 16)
-		{
-			tile_ind_x += 1;
-			tile_ind_y += 1;
-			tile_ind = map[tile_ind_y*16 + tile_ind_x];
-			ind_vert = tile_ind / 18;
-			ind_horiz = tile_ind % 18;
-			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x + 16 - rem_x, dst_y + 16 - rem_y, 0);
-			tile_ind_x -= 1;
-			tile_ind_y -= 1;
-		}
-	}
-	else {
-		uint16_t tile_ind_x = (src_x ) / 16;
-		uint16_t tile_ind_y = (src_y ) / 16;
-
-		// upper left
-		uint8_t tile_ind = map[tile_ind_y*16 + tile_ind_x];
-		uint16_t ind_vert = tile_ind / 18;
-		uint16_t ind_horiz = tile_ind % 18;
-		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*16, 16*ind_vert, w, h, dst_x, dst_y, 0);
-	}
-
-}
-
-
-
-uint8_t A8__p[] = {
-55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,
-55,55,55,55,55,55,55,55,55,55,55,22,55,55,55,55,
-55,55,55,56,2,2,2,2,2,2,2,2,2,2,2,2,
-55,55,56,2,2,3,5,2,3,5,2,2,2,2,2,2,
-55,56,2,2,2,21,23,2,21,23,2,2,2,2,2,2,
-55,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-55,38,2,2,2,2,3,5,2,3,5,2,2,2,2,2,
-55,55,38,2,2,2,21,23,2,21,23,2,2,2,2,2,
-55,55,55,38,2,2,2,2,2,2,2,2,2,2,2,2,
-55,55,55,55,37,37,37,37,37,37,37,37,37,37,37,37,
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
 
@@ -355,8 +358,7 @@ int main(void) {
 	
 	// Setup.
 	gpu_p32[0] = 2; // IDX4 mode
-	gpu_p32[1] = 0; // Unpacked mode.
-	map = A8__p;
+	gpu_p32[1] = 0; // Unpacked mode
 
 	// Copy palette.
 	for(uint8_t i = 0; i < 16; i++){
@@ -365,8 +367,9 @@ int main(void) {
 
 	// Game state.
 	game_state_t gs;
-	// redovni screenovi su od 0-127, 128 je title screen
-	gs.current_screen = 1;
+	// redovni screenovi su od 0-127
+	// -1 naznaka da se crta title screen
+	gs.current_screen = -1;
 	int y_padding = 0;
 
 	gs.link.anim.orientation = LEFT;
@@ -396,7 +399,7 @@ int main(void) {
 		/*
 			Za sada samo:
 			Crtkanje intro screen-a na ekran.
-			I kada korisnik pritisne s kao start, da se otvori mapa A1 sa velike mape.
+			I kada korisnik pritisne s kao start, da se otvori neka mapa sa velike mape.
 		*/
 		
 		/////////////////////////////////////
@@ -449,8 +452,8 @@ int main(void) {
 			if(mov_x + gs.link.pos.x < 0) {
 			gs.link.pos.x = 0;
 			}
-			else if (mov_x + gs.link.pos.x >= title_screen__w - LINK_SPRITE_DIM) {
-				gs.link.pos.x = title_screen__w - LINK_SPRITE_DIM;
+			else if (mov_x + gs.link.pos.x >= title_screen__w - SPRITE_DIM) {
+				gs.link.pos.x = title_screen__w - SPRITE_DIM;
 			}
 			else {
 				gs.link.pos.x += mov_x;
@@ -458,8 +461,8 @@ int main(void) {
 			if(mov_y + gs.link.pos.y < Y_PADDING) {
 				gs.link.pos.y = Y_PADDING;
 			}
-			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - LINK_SPRITE_DIM) {
-				gs.link.pos.y = title_screen__h - LINK_SPRITE_DIM - 9;
+			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
+				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
 			}
 			else {
 				gs.link.pos.y += mov_y;
@@ -495,8 +498,7 @@ int main(void) {
 		}
 
 		if(draw_bg == 1 && started){
-			// TODO
-			draw_tiles(A8__p, 18, 8, 0, y_padding);
+			draw_tiles(A8__p, tile_num_x, tile_num_y, 0, y_padding);
 			draw_bg = 0;
 		}
 		
@@ -507,7 +509,7 @@ int main(void) {
 				A8__p, 16,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y - Y_PADDING,
-				LINK_SPRITE_DIM, LINK_SPRITE_DIM,
+				SPRITE_DIM, SPRITE_DIM,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y
 			);
@@ -519,7 +521,7 @@ int main(void) {
 				link_sheet__p, link_sheet__w,
 				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
 				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
-				LINK_SPRITE_DIM, LINK_SPRITE_DIM,
+				SPRITE_DIM, SPRITE_DIM,
 				gs.link.pos.x,
 				gs.link.pos.y,
 				1

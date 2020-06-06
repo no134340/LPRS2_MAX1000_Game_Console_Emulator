@@ -66,14 +66,6 @@ def build(bld):
 	bld.recurse('emulator')
 	
 	screen_imgs = sorted(
-#		glob.glob('images/*1.png') +
-#		glob.glob('images/*2.png') +
-#		glob.glob('images/*3.png') +
-#		glob.glob('images/*4.png') +
-#		glob.glob('images/*5.png') +
-#		glob.glob('images/*6.png') +
-#		glob.glob('images/*7.png') +
-#		glob.glob('images/*8.png') +
 		glob.glob('images/tiles.png') +
 		glob.glob('images/link_sheet.png')
 	)
@@ -94,7 +86,7 @@ def build(bld):
 
 	bld.program(
 		features = 'cxx',
-		source = ['project.c', 'screens_idx4.c', 'title_screen_idx4.c'],
+		source = ['project.c', 'screens_idx4.c', 'title_screen_idx4.c', 'screen_tile_index.c'],
 		includes = ['build/'],
 		use = 'emulator',
 		target = 'project'
