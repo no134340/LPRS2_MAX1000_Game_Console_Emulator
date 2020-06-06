@@ -114,7 +114,7 @@ typedef struct {
 // (ima 16*8 = 128 screenova ukupno)
 // + jedan title screen
 // ovo koristimo kada prosleđujemo funkciji za crtkanje pozadine šta da crta
-uint32_t* screens[] = 
+/*uint32_t* screens[] = 
 {
 	A1__p, B1__p, C1__p, D1__p, E1__p, F1__p, G1__p, H1__p, I1__p, J1__p, K1__p, L1__p, M1__p, N1__p, O1__p, P1__p,
 	A2__p, B2__p, C2__p, D2__p, E2__p, F2__p, G2__p, H2__p, I2__p, J2__p, K2__p, L2__p, M2__p, N2__p, O2__p, P2__p,
@@ -125,7 +125,7 @@ uint32_t* screens[] =
 	A7__p, B7__p, C7__p, D7__p, E7__p, F7__p, G7__p, H7__p, I7__p, J7__p, K7__p, L7__p, M7__p, N7__p, O7__p, P7__p,
 	A8__p, B8__p, C8__p, D8__p, E8__p, F8__p, G8__p, H8__p, I8__p, J8__p, K8__p, L8__p, M8__p, N8__p, O8__p, P8__p,
 	title_screen__p 
-};
+};*/
 
 // pokazivači na palete
 // Intro screen i redovni screenovi sa mape i link imaju zajedno
@@ -135,7 +135,7 @@ uint32_t* screen_palletes[] =
 {
 	// izgleda da je moja izmena u img_to_src.py skripti pokupila ime poslednje slike pa je po
 	// njoj nadenula ime paleti. it's not a bug it's a feature
-	palette_title_screen, palette_link_sheet
+	palette_title_screen, palette_tiles
 };
 
 typedef struct {
@@ -159,35 +159,6 @@ static inline uint32_t shift_div_with_round_up(uint32_t num, uint32_t shift){
 		d++;
 	}
 	return d;
-}
-
-
-static void draw_background(
-	uint32_t* src_p,
-	uint16_t src_w,
-	uint16_t src_h,
-	uint16_t dst_x,
-	uint16_t dst_y
-) {
-	
-	
-	uint16_t dst_x8 = shift_div_with_round_down(dst_x, 3);
-	uint16_t src_w8 = shift_div_with_round_up(src_w, 3);
-	
-	
-	for(uint16_t y = 0; y < src_h; y++){
-		for(uint16_t x8 = 0; x8 < src_w8; x8++){
-			uint32_t src_idx = y*src_w8 + x8;
-			uint32_t pixels = src_p[src_idx];
-			uint32_t dst_idx =
-				(dst_y+y)*SCREEN_IDX4_W +
-				(dst_x8+8*x8);
-			for(int i = 0; i < 8; i++){
-				unpack_idx4_p32[dst_idx + i] = (pixels>>(4*i))&0b1111;
-			}
-			
-		}
-	}
 }
 
 static void draw_sprite_from_atlas(
@@ -230,6 +201,61 @@ static void draw_sprite_from_atlas(
 }
 
 
+static void draw_tiles(
+	uint8_t* src_p,
+	uint16_t src_w, // broj tile-ova horizontalno
+	uint16_t src_h, // broj tile-ova vertikalno
+	uint16_t dst_x,
+	uint16_t dst_y
+) {
+		
+	
+	for(uint16_t y = 0; y < 10; y++){
+		for(uint16_t x = 0; x < 16; x++){
+			uint8_t ind = src_p[y*16 + x];
+			if(ind == 144) {
+				continue;
+			}
+			uint16_t ind_vert = ind / src_w;
+			uint16_t ind_horiz = ind % src_w;
+			draw_sprite_from_atlas(
+				tiles__p, tiles__w, ind_horiz*16, ind_vert*16, 16, 16, x*16, (y*16+dst_y), 0
+			);
+		}
+	}
+}
+
+
+static void draw_background(
+	uint32_t* src_p,
+	uint16_t src_w,
+	uint16_t src_h,
+	uint16_t dst_x,
+	uint16_t dst_y
+) {
+	
+	
+	uint16_t dst_x8 = shift_div_with_round_down(dst_x, 3);
+	uint16_t src_w8 = shift_div_with_round_up(src_w, 3);
+	
+	
+	for(uint16_t y = 0; y < src_h; y++){
+		for(uint16_t x8 = 0; x8 < src_w8; x8++){
+			uint32_t src_idx = y*src_w8 + x8;
+			uint32_t pixels = src_p[src_idx];
+			uint32_t dst_idx =
+				(dst_y+y)*SCREEN_IDX4_W +
+				(dst_x8+8*x8);
+			for(int i = 0; i < 8; i++){
+				unpack_idx4_p32[dst_idx + i] = (pixels>>(4*i))&0b1111;
+			}
+			
+		}
+	}
+}
+
+
+
 static void update_background (
 	uint32_t* sprite_atlas,
 	uint16_t atlas_w,
@@ -255,6 +281,18 @@ static void update_background (
 
 }
 
+uint8_t A8__p[] = {
+55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,
+55,55,55,55,55,55,55,55,55,55,55,22,55,55,55,55,
+55,55,55,56,2,2,2,2,2,2,2,2,2,2,2,2,
+55,55,56,2,2,3,5,2,3,5,2,2,2,2,2,2,
+55,56,2,2,2,21,23,2,21,23,2,2,2,2,2,2,
+55,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+55,38,2,2,2,2,3,5,2,3,5,2,2,2,2,2,
+55,55,38,2,2,2,21,23,2,21,23,2,2,2,2,2,
+55,55,55,38,2,2,2,2,2,2,2,2,2,2,2,2,
+55,55,55,55,37,37,37,37,37,37,37,37,37,37,37,37,
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
@@ -273,7 +311,7 @@ int main(void) {
 	// Game state.
 	game_state_t gs;
 	// redovni screenovi su od 0-127, 128 je title screen
-	gs.current_screen = 128;
+	gs.current_screen = 1;
 	int y_padding = 0;
 
 	gs.link.anim.orientation = LEFT;
@@ -312,10 +350,6 @@ int main(void) {
 		int mov_x = 0;
 		int mov_y = 0;
 	
-		// btw izmenila sam Lošmijev kod u emulatoru jer kako je bilo
-		// start ostane zakucan na 1 nakon što ga pritisneš
-		// pa sam tamo izmenila da se vrati na 0 nakon što se otpusti
-		// postoji rešenje za ovo a da se ne menja njegov kod, ali...
 		if(joypad.start) {
 			// neće sa start screena prelaziti na ovaj deo mape, ovo je samo test
 			gs.current_screen = 0;
@@ -323,7 +357,7 @@ int main(void) {
 			draw_link = 1;
 			// prebaci se na paletu za ekrane i linka
 			for(uint8_t i = 0; i < 16; i++){
-				palette_p32[i] = palette_link_sheet[i];
+				palette_p32[i] = palette_tiles[i];
 			}
 			draw_bg = 1;
 			started = 1;
@@ -398,24 +432,30 @@ int main(void) {
 			}
 		}
 		
-		if(draw_bg == 1) {
+		if(draw_bg == 1 && !started) {
 			draw_background(
-			screens[gs.current_screen], title_screen__w, title_screen__h - y_padding, 0, y_padding
+			title_screen__p, title_screen__w, title_screen__h - y_padding, 0, y_padding
 			);
+			draw_bg = 0;
+		}
+
+		if(draw_bg == 1 && started){
+			// TODO
+			draw_tiles(A8__p, 18, 8, 0, y_padding);
 			draw_bg = 0;
 		}
 		
 
 		if(draw_link == 1) {
 			// Apdejtuj samo pozadinu oko Linka.
-			update_background(
-				screens[gs.current_screen], title_screen__w,
+			/*update_background(
+				A8__p, 16,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y - Y_PADDING,
 				LINK_SPRITE_DIM, LINK_SPRITE_DIM,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y
-			);
+			);*/
 
 			gs.link.old_pos.x = gs.link.pos.x;
 			gs.link.old_pos.y = gs.link.pos.y;
