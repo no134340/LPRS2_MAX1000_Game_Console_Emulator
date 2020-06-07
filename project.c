@@ -438,7 +438,7 @@ int main(void) {
 				draw_link = 1;
 				gs.link.anim.orientation = RIGHT;
 			}
-			if(joypad.up) {
+			else if(joypad.up) {
 				mov_y = -1;
 				draw_link = 1;
 				gs.link.anim.orientation = UP;
