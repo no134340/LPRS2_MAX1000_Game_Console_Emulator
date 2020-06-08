@@ -111,6 +111,7 @@ typedef struct {
 
 
 // pokazivači na svaki od delova mapa
+// ovo su sada matrice sa indeksima tile-ova!
 // 2D INDEKSI SCREEN-OVA:
 // A1 - (0, 0), B1 - (0, 1) ITD.
 // 1D INDEKS ZA SCREEN SA 2D INDEKSOM (i, j):
@@ -118,7 +119,7 @@ typedef struct {
 // 16 zato sto ima 16 screenova u jednom redu, redova ima 8
 // (ima 16*8 = 128 screenova ukupno)
 // + jedan title screen
-// ovo koristimo kada prosleđujemo funkciji za crtkanje pozadine šta da crta
+// ovo koristimo kada prosleđujemo funkciji za crtkanje tile-ova šta da crta
 uint8_t* screens[] = 
 {
 	A1__p, B1__p, C1__p, D1__p, E1__p, F1__p, G1__p, H1__p, I1__p, J1__p, K1__p, L1__p, M1__p, N1__p, O1__p, P1__p,
@@ -220,7 +221,9 @@ static void draw_tiles(
 				U python skripti za pravljenje indeksa tile-ova
 				stavila sam da stavi kao indeks 144 ukoliko tile
 				nije pronađen u tile-sheetu..... Ovo bi trebalo
-				rešiti nekako kasnije. Za sada uzme onaj skroz crni tile.
+				rešiti nekako kasnije (najbolje ručno dodati tile-ove u sheet,
+				python skripta će bez problema odraditi ponovo posao sa 
+				dodatim tile-ovima). Za sada uzme onaj skroz crni tile.
 			*/
 			if(ind == 144) {
 				ind = 22;
@@ -259,7 +262,7 @@ static void update_background (
 		uint16_t tile_ind_y = (src_y - rem_y) / SPRITE_DIM;
 
 		// upper left
-		uint8_t tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+		uint8_t tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
 		uint16_t ind_vert = tile_ind / tile_num_x;
 		uint16_t ind_horiz = tile_ind % tile_num_x;
 		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x - rem_x, dst_y - rem_y, 0);
@@ -269,7 +272,7 @@ static void update_background (
 		if(src_x < title_screen__w - SPRITE_DIM) {
 			tile_ind_x += 1;
 			tile_ind_y += 0;
-			tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
 			ind_vert = tile_ind / tile_num_x;
 			ind_horiz = tile_ind % tile_num_x;
 			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + SPRITE_DIM - rem_x, dst_y - rem_y, 0);
@@ -282,7 +285,7 @@ static void update_background (
 		{
 			tile_ind_x += 0;
 			tile_ind_y += 1;
-			tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
+			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
 			ind_vert = tile_ind / tile_num_x;
 			ind_horiz = tile_ind % tile_num_x;
 			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM,ind_vert*SPRITE_DIM, w, h, dst_x  - rem_x, dst_y + SPRITE_DIM - rem_y, 0);
@@ -295,7 +298,7 @@ static void update_background (
 		{
 			tile_ind_x += 1;
 			tile_ind_y += 1;
-			tile_ind = sprite_atlas[tile_ind_y*16 + tile_ind_x];
+			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
 			ind_vert = tile_ind / tile_num_x;
 			ind_horiz = tile_ind % tile_num_x;
 			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + SPRITE_DIM - rem_x, dst_y + SPRITE_DIM - rem_y, 0);
@@ -408,9 +411,9 @@ int main(void) {
 		int mov_x = 0;
 		int mov_y = 0;
 	
-		if(joypad.start) {
+		if(joypad.start && !started) {
 			// neće sa start screena prelaziti na ovaj deo mape, ovo je samo test
-			gs.current_screen = 0;
+			gs.current_screen = 7*16;
 			y_padding = Y_PADDING;
 			draw_link = 1;
 			// prebaci se na paletu za ekrane i linka
@@ -424,7 +427,7 @@ int main(void) {
 		// Gameplay.
 		
 		// Da ne prođe kroz ivice ekrana
-		// Link lepo lebdi po svim osama sada.
+		// Link lepo šeta po svim osama sada.
 		
 
 		if(started) {
@@ -498,7 +501,7 @@ int main(void) {
 		}
 
 		if(draw_bg == 1 && started){
-			draw_tiles(A8__p, tile_num_x, tile_num_y, 0, y_padding);
+			draw_tiles(screens[gs.current_screen], tile_num_x, tile_num_y, 0, y_padding);
 			draw_bg = 0;
 		}
 		
@@ -506,7 +509,7 @@ int main(void) {
 		if(draw_link == 1) {
 			// Apdejtuj samo pozadinu oko Linka.
 			update_background(
-				A8__p, 16,
+				screens[gs.current_screen], TILES_H,
 				gs.link.old_pos.x,
 				gs.link.old_pos.y - Y_PADDING,
 				SPRITE_DIM, SPRITE_DIM,
