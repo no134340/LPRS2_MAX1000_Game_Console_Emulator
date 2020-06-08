@@ -55,7 +55,6 @@ typedef struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game config.
-
 #define Y_PADDING 56 // number of blank rows (treba nam crno iznad ekrana za HUD)
 
 #define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 24px apart (ja sam tako nacrtala u gimp-u da bude lakše da odsecamo linkića iz sheet-a, oni bez mača)
@@ -281,8 +280,7 @@ static void update_background (
 		}
 
 		// lower left
-		if(src_y < Y_PADDING + title_screen__h - 8 - SPRITE_DIM)
-		{
+		if(src_y < Y_PADDING + title_screen__h - 8 - SPRITE_DIM) {
 			tile_ind_x += 0;
 			tile_ind_y += 1;
 			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
@@ -294,8 +292,7 @@ static void update_background (
 		}
 
 		// lower right
-		if(src_y < Y_PADDING + title_screen__h - SPRITE_DIM - 8 && src_x < title_screen__w - SPRITE_DIM)
-		{
+		if(src_y < Y_PADDING + title_screen__h - SPRITE_DIM - 8 && src_x < title_screen__w - SPRITE_DIM) {
 			tile_ind_x += 1;
 			tile_ind_y += 1;
 			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
@@ -392,10 +389,10 @@ int main(void) {
 	int counter = 0;
 
 	while(1){
-		counter++;
+		counter++;//ovo je pisano nogicama
 		if(counter == ANIM_DELAY)
 		{
-			gs.link.anim.orientation_state ^= 1;
+			gs.link.anim.orientation_state ^= 1;//ovo vise nije pisano nogicama
 			counter = 0;
 		}
 		
