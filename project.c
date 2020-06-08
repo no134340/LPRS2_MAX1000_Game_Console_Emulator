@@ -69,6 +69,8 @@ typedef struct {
 
 #define TILES_V 10 // broj tile-ova koji staje u svaku vrstu
 
+#define TILE_SIZE 16
+
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
@@ -388,6 +390,9 @@ int main(void) {
 
 	int counter = 0;
 
+	uint8_t current_tile = 0;
+	uint8_t* collision_screen;
+
 	while(1){
 		counter++;//ovo je pisano nogicama
 		if(counter == ANIM_DELAY)
@@ -428,25 +433,30 @@ int main(void) {
 		
 
 		if(started) {
+			collision_screen = screens[gs.current_screen];//treba mi nogice slomiti
 			if(joypad.left) {
 				mov_x = -1;
 				draw_link = 1;
 				gs.link.anim.orientation = LEFT;
+				current_tile = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + gs.link.pos.x/TILE_SIZE];
 			}
-			else if(joypad.right) {
+			else if(joypad.right) {//razmisljam da pomerim y na sredinu kad se menja x? sta mislite nenogaci moji
 				mov_x = +1;
 				draw_link = 1;
 				gs.link.anim.orientation = RIGHT;
+				current_tile =collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+SPRITE_DIM)/TILE_SIZE];
 			}
 			else if(joypad.up) {
 				mov_y = -1;
 				draw_link = 1;
 				gs.link.anim.orientation = UP;
+				current_tile = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + gs.link.pos.x/TILE_SIZE];
 			}
 			else if(joypad.down) {
 				mov_y = +1;
 				draw_link = 1;
 				gs.link.anim.orientation = DOWN;
+				current_tile = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM - 1)/TILE_SIZE)*TILES_H + gs.link.pos.x/TILE_SIZE];//lakse se nabada onda, nije frkica ako nogice budu blizu tile
 			}
 
 			if(mov_x + gs.link.pos.x < 0) {
@@ -454,6 +464,9 @@ int main(void) {
 			}
 			else if (mov_x + gs.link.pos.x >= title_screen__w - SPRITE_DIM) {
 				gs.link.pos.x = title_screen__w - SPRITE_DIM;
+			}
+			else if((current_tile != 2) && (current_tile != 14)) {//16*10
+				
 			}
 			else {
 				gs.link.pos.x += mov_x;
@@ -463,6 +476,13 @@ int main(void) {
 			}
 			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
 				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
+			}
+			else if((current_tile != 2) && (current_tile != 22) && (current_tile != 14)) {//16*10
+				
+			}
+			else if(current_tile == 22) {//samo test za pecinu kad je budemo imali
+				gs.current_screen = 16*3+1;
+				draw_bg = 1;
 			}
 			else {
 				gs.link.pos.y += mov_y;
