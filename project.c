@@ -438,13 +438,13 @@ int main(void) {
 				mov_x = -1;
 				draw_link = 1;
 				gs.link.anim.orientation = LEFT;
-				current_tile = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + gs.link.pos.x/TILE_SIZE];
+				current_tile = collision_screen[((gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+mov_x)/TILE_SIZE];
 			}
 			else if(joypad.right) {//razmisljam da pomerim y na sredinu kad se menja x? sta mislite nenogaci moji
 				mov_x = +1;
 				draw_link = 1;
 				gs.link.anim.orientation = RIGHT;
-				current_tile =collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+SPRITE_DIM)/TILE_SIZE];
+				current_tile =collision_screen[((gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+SPRITE_DIM+mov_x)/TILE_SIZE];
 			}
 			else if(joypad.up) {
 				mov_y = -1;
