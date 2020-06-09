@@ -31,7 +31,7 @@ def prerequisites(ctx):
 	
 	if sys.platform.startswith('linux'):
 		# Ubuntu.
-		ctx.exec_command2('apt-get -y install python-pil')
+		ctx.exec_command2('apt-get -y install python3-pil')
 	elif sys.platform == 'win32' and os.name == 'nt' and os.path.sep == '/':
 		# MSYS2 Windows /mingw32/bin/python.
 		ctx.exec_command2(
@@ -51,8 +51,8 @@ def configure(conf):
 	conf.env.append_value('CFLAGS', '-std=c99')
 	
 	conf.find_program(
-		'python',
-		var = 'PYTHON'
+		'python3',
+		var = 'PYTHON3'
 	)
 	conf.find_program(
 		'img_to_src',
@@ -61,6 +61,12 @@ def configure(conf):
 		path_list = os.path.abspath('.')
 	)
 	
+	conf.find_program(
+		'find_tile',
+		var = 'FIND_TILE',
+		exts = '.py',
+		path_list = os.path.abspath('.')
+	)
 
 def build(bld):
 	bld.recurse('emulator')
@@ -68,6 +74,12 @@ def build(bld):
 	screen_imgs = sorted(
 		glob.glob('images/tiles.png') +
 		glob.glob('images/link_sheet.png')
+	)
+
+
+	bld(
+		rule = '${PYTHON} ${FIND_TILE}',
+		target = ['screen_tile_index.c', 'screen_tile_index.h']
 	)
 
 	bld(

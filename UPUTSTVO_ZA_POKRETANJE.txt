@@ -1,11 +1,6 @@
-Pošto waf ne želi da sarađuje sa mnom trenutno,
-nisam mogla namestiti da u build-u odradi i moju python skriptu,
-program se pokreće tako što:
+Ako bude bilo problema:
+1. instalirati python 3.6 verziju i pip3, i onda lepo ukuckati u terminal:
 
-Standardno configure.
-
-Pre build, copy-paste screen_tile_index.c i screen_tile_index.h u build folder.
-
-Onda build.
-
-Možda neće raditi. Onda samo copy-paste sadržaj screen_tile_index.c u project.c na vrh.
+ pip3 install pillow
+ 
+ 2. profit?????

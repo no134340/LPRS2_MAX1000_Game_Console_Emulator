@@ -483,7 +483,7 @@ int main(void) {
 				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
 			}
 			else if(((current_tileX != 2) || (current_tileY != 2)) && ((current_tileX != 22) || (current_tileY != 22))&& ((current_tileX != 14) || (current_tileY != 14))) {//16*10
-				printf("X = %d \n Y= %d\n", current_tileX, current_tileY);
+				//printf("X = %d \n Y= %d\n", current_tileX, current_tileY);
 			}
 			else if((current_tileX == 22) && (current_tileY == 22)) {//samo test za pecinu kad je budemo imali
 				gs.current_screen = 16*3+1;

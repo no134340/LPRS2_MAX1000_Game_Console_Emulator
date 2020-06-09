@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+
 from PIL import Image
 import glob
 import os
-import shutil
+import sys
 
 
 def make_tiles_array(main_array, w, h):
@@ -19,6 +21,8 @@ def make_tiles_array(main_array, w, h):
             # cnt += 1
     return tile_imgs
 
+
+io = sys.stderr
 # make the header file
 fp = open("screen_tile_index.h", "w+")
 fp.write("#ifndef SCREEN_TILE_INDEX_H\n" +
@@ -36,20 +40,25 @@ fp.close()
 
 
 # make the tile images array
-tiles = Image.open("images/tiles.png").convert('RGB')
+tiles = Image.open("../images/tiles.png").convert('RGB')
 tiles_array = tiles.load()
 
 tile_imgs = make_tiles_array(tiles_array, tiles.size[0], tiles.size[1])
 
 # get every map path
 img_names = []
-os.chdir(os.getcwd() + "/Maps")
+os.chdir(os.getcwd() + "/../Maps")
 for file in glob.glob("*.png"):
     img_names.append(file)
 
-img_names.sort()
+img_names = sorted(img_names)
 # for every map, generate index matrix
+
+io.write("Generating lookup index matrices...\n")
+
 for file in img_names:
+
+    io.write("{0}...".format(file))
 
     map_img = Image.open(file)
     rgb_img = map_img.convert('RGB')
@@ -60,7 +69,7 @@ for file in img_names:
 
     for y in range(0, height - 8, 16):
         for x in range(0, width, 16):
-            ind = None
+            ind = -1
 
             for idx, tile in enumerate(tile_imgs):
                 ta = tile.load()
@@ -72,7 +81,7 @@ for file in img_names:
                 if match > 16*16 - 10:
                     ind = idx
                     break
-            if not ind:
+            if ind == -1:
                 indices.append(144)
             else:
                 indices.append(ind)
@@ -81,17 +90,17 @@ for file in img_names:
     #
     # print(len(indices))
 
-    os.chdir(os.getcwd() + "/..")
+    os.chdir(os.getcwd() + "/../build")
 
     fp = open("screen_tile_index.h", "a+")
-    fp.write(f"extern uint8_t {file.split('/')[-1].rstrip('.png')}__p[];\n")
+    fp.write("extern uint8_t {0}__p[];\n".format(file.split('/')[-1].rstrip('.png')))
     fp.close()
 
     fp = open("screen_tile_index.c", "a+")
-    fp.write(f"uint8_t {file.split('/')[-1].rstrip('.png')}__p[] =" + " {\n")
+    fp.write("uint8_t {0}__p[] = ".format(file.split('/')[-1].rstrip('.png')) + "{\n")
     pr_str = ""
     for i, ind in enumerate(indices):
-        pr_str += (f"{ind},")
+        pr_str += ("{0},".format(ind))
         if i % 16 == 15 and i != 0:
             pr_str += ("\n")
     pr_str.rstrip(",")
@@ -99,13 +108,11 @@ for file in img_names:
     fp.write(pr_str)
     fp.close()
 
-    os.chdir(os.getcwd() + "/Maps")
+    os.chdir(os.getcwd() + "/../Maps")
 
-os.chdir(os.getcwd() + "/..")
+    io.write("Done\n")
+
+os.chdir(os.getcwd() + "/../build")
 fp = open("screen_tile_index.h", "a+")
-fp.write(f"\n#endif //SCREEN_TILE_INDEX_H ")
+fp.write("\n#endif //SCREEN_TILE_INDEX_H ")
 fp.close()
-
-
-shutil.move(os.getcwd() + "/screen_tile_index.h", os.getcwd() + "/build/screen_tile_index.h")
-shutil.move(os.getcwd() + "/screen_tile_index.c", os.getcwd() + "/build/screen_tile_index.c")
