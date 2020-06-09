@@ -73,7 +73,10 @@ def build(bld):
 	
 	screen_imgs = sorted(
 		glob.glob('images/tiles.png') +
-		glob.glob('images/link_sheet.png')
+		glob.glob('images/link_sheet.png') + 
+		glob.glob('images/fonts_red.png') + 
+		glob.glob('images/fonts_white.png') + 
+		glob.glob('images/HUD_sprites.png')
 	)
 
 
