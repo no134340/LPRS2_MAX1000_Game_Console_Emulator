@@ -464,9 +464,19 @@ int main(void) {
 				current_tileY = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (gs.link.pos.x + SPRITE_DIM-2)/TILE_SIZE];
 			}
 
+			//odje mrda mape levo desno
 			if(mov_x + gs.link.pos.x < 0) {
-			gs.link.pos.x = 0;
+				gs.current_screen--;
+				gs.link.pos.x = title_screen__w - 16;
+				draw_bg = 1;
 			}
+			else if(mov_x + gs.link.pos.x > title_screen__w - 16){ // dodao ja
+				gs.current_screen++;
+				printf("%d",gs.link.pos.x);
+				gs.link.pos.x = 0;
+				draw_bg = 1;				
+			}
+			//odje prestaje mrda mape levo desno
 			else if (mov_x + gs.link.pos.x >= title_screen__w - SPRITE_DIM) {
 				gs.link.pos.x = title_screen__w - SPRITE_DIM;
 			}
@@ -476,9 +486,20 @@ int main(void) {
 			else {
 				gs.link.pos.x += mov_x;
 			}
-			if(mov_y + gs.link.pos.y < Y_PADDING) {
+			
+			//odje mrda mape gore dole
+			if(mov_y + gs.link.pos.y < Y_PADDING){
+				gs.current_screen -= 16;
+				gs.link.pos.y = title_screen__h - 25;
+				draw_bg = 1;
+
+			}else if(mov_y + gs.link.pos.y > title_screen__h - 25){
+				gs.current_screen += 16;
 				gs.link.pos.y = Y_PADDING;
+				draw_bg = 1;
+
 			}
+			//odje prestaje mrda mape gore dole
 			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
 				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
 			}
