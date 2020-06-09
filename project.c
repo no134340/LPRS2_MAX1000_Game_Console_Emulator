@@ -390,7 +390,8 @@ int main(void) {
 
 	int counter = 0;
 
-	uint8_t current_tile = 0;
+	uint8_t current_tileX = 0;
+	uint8_t current_tileY = 0;
 	uint8_t* collision_screen;
 
 	while(1){
@@ -438,25 +439,29 @@ int main(void) {
 				mov_x = -1;
 				draw_link = 1;
 				gs.link.anim.orientation = LEFT;
-				current_tile = collision_screen[((gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+mov_x)/TILE_SIZE];
+				current_tileX = collision_screen[((gs.link.pos.y - Y_PADDING+2)/TILE_SIZE)*TILES_H + (gs.link.pos.x+mov_x)/TILE_SIZE];
+				current_tileY = collision_screen[((gs.link.pos.y - Y_PADDING + SPRITE_DIM-2)/TILE_SIZE)*TILES_H + (gs.link.pos.x+mov_x)/TILE_SIZE];
 			}
 			else if(joypad.right) {//razmisljam da pomerim y na sredinu kad se menja x? sta mislite nenogaci moji
 				mov_x = +1;
 				draw_link = 1;
 				gs.link.anim.orientation = RIGHT;
-				current_tile =collision_screen[((gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+SPRITE_DIM+mov_x)/TILE_SIZE];
+				current_tileX =collision_screen[((gs.link.pos.y - Y_PADDING+2)/TILE_SIZE)*TILES_H + (gs.link.pos.x+SPRITE_DIM+mov_x)/TILE_SIZE];
+				current_tileY = collision_screen[((gs.link.pos.y - Y_PADDING + SPRITE_DIM-2)/TILE_SIZE)*TILES_H + (gs.link.pos.x+mov_x + SPRITE_DIM)/TILE_SIZE];
 			}
 			else if(joypad.up) {
 				mov_y = -1;
 				draw_link = 1;
 				gs.link.anim.orientation = UP;
-				current_tile = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + gs.link.pos.x/TILE_SIZE];
+				current_tileX = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x+2)/TILE_SIZE];
+				current_tileY = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (gs.link.pos.x + SPRITE_DIM-2)/TILE_SIZE];
 			}
 			else if(joypad.down) {
 				mov_y = +1;
 				draw_link = 1;
 				gs.link.anim.orientation = DOWN;
-				current_tile = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM - 1)/TILE_SIZE)*TILES_H + gs.link.pos.x/TILE_SIZE];//lakse se nabada onda, nije frkica ako nogice budu blizu tile
+				current_tileX = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (gs.link.pos.x+2)/TILE_SIZE];//lakse se nabada onda, nije frkica ako nogice budu blizu tile
+				current_tileY = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (gs.link.pos.x + SPRITE_DIM-2)/TILE_SIZE];
 			}
 
 			if(mov_x + gs.link.pos.x < 0) {
@@ -465,7 +470,7 @@ int main(void) {
 			else if (mov_x + gs.link.pos.x >= title_screen__w - SPRITE_DIM) {
 				gs.link.pos.x = title_screen__w - SPRITE_DIM;
 			}
-			else if((current_tile != 2) && (current_tile != 14)) {//16*10
+			else if(((current_tileX != 2) || (current_tileY != 2)) && ((current_tileX != 14) || (current_tileY != 14))) {//16*10
 				
 			}
 			else {
@@ -477,10 +482,10 @@ int main(void) {
 			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
 				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
 			}
-			else if((current_tile != 2) && (current_tile != 22) && (current_tile != 14)) {//16*10
-				
+			else if(((current_tileX != 2) || (current_tileY != 2)) && ((current_tileX != 22) || (current_tileY != 22))&& ((current_tileX != 14) || (current_tileY != 14))) {//16*10
+				printf("X = %d \n Y= %d\n", current_tileX, current_tileY);
 			}
-			else if(current_tile == 22) {//samo test za pecinu kad je budemo imali
+			else if((current_tileX == 22) && (current_tileY == 22)) {//samo test za pecinu kad je budemo imali
 				gs.current_screen = 16*3+1;
 				draw_bg = 1;
 			}
