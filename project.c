@@ -57,6 +57,9 @@ typedef struct {
 // Game config.
 #define Y_PADDING 56 // number of blank rows (treba nam crno iznad ekrana za HUD)
 
+#define FIRST_HUD_PADDING 88 //16+64+8
+#define FIRST_HUD_SIZE 8
+
 #define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 24px apart (ja sam tako nacrtala u gimp-u da bude lakše da odsecamo linkića iz sheet-a, oni bez mača)
 #define SPRITE_DIM 16 // sprites are 16x16px (oni mali bez mača. oni s mačem su 32px)
 						   // nismo toliko uznapredovali u razvoju igrice da pišem i konstante za taj poslednji red gde su linkići s mačem
@@ -567,6 +570,24 @@ int main(void) {
 		if(draw_bg == 1 && started){
 			draw_tiles(screens[gs.current_screen], tile_num_x, tile_num_y, 0, y_padding);
 			draw_bg = 0;
+
+			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10, 1);
+			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*2, 1);
+			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*3, 1);
+
+			draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 6, 1);
+			draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 22, 1);
+			draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 30, 1);
+
+			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);
+			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
+
+			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*22, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11, 15, 1);
+			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*10, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*12, 15, 1);
+			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*13, 15, 1);
+			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*30, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*14, 15, 1);
+			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*28, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*15, 15, 1);
+			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*22, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*16, 15, 1);
 		}
 		
 
