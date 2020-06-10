@@ -74,6 +74,10 @@ typedef struct {
 
 #define TILE_SIZE 16
 
+#define OVERWORLD_MAPS_H 16
+
+#define OVERWORLD_MAPS_V 8
+
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
@@ -110,6 +114,7 @@ typedef struct {
 	point_t pos;
 	link_anim_t anim;
 	point_t old_pos;
+	uint8_t lives;
 } link_t;
 
 
@@ -146,6 +151,13 @@ uint32_t* screen_palettes[] =
 	// njoj nadenula ime paleti. it's not a bug it's a feature
 	palette_title_screen, palette_tiles
 };
+
+
+uint8_t walkable_tiles[26] = {0, 2, 6, 12, 14, 18, 22, 24, 28, 30, 34, 3*18 + 4, 3*18 + 10, 3*18 + 16, 4*18 + 4, 4*18 + 10, 4*18 + 16, 5*18 + 4, 5*18 + 10, 5*18+16, 6*18 + 4, 6*18 + 10, 6*18+16, 7*18 + 5, 7*18 + 11, 7*18+17};
+
+
+// kojim redom ide koji karakter u tile sheet-u za slova
+typedef enum {ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, COMMA, EXCL, APO, AND, PERIOD, QUOTE, QMARK, DASH} font_indices;
 
 typedef struct {
 	// trenutno prikazani deo mape / ekran
@@ -229,7 +241,7 @@ static void draw_tiles(
 				python skripta će bez problema odraditi ponovo posao sa 
 				dodatim tile-ovima). Za sada uzme onaj skroz crni tile.
 			*/
-			if(ind == 144) {
+			if(ind == 150) {
 				ind = 22;
 			}
 			uint16_t ind_vert = ind / src_w;
@@ -324,6 +336,56 @@ static void update_background (
 
 }
 
+void init_HUD() {
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10, 1);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*2, 1);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*3, 1);
+
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 6, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 22, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 30, 1);
+
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
+
+	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(DASH % 16), FIRST_HUD_SIZE*2*(DASH >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11, 15, 1);
+	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(L % 16), FIRST_HUD_SIZE*2*(L >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*12, 15, 1);
+	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(I % 16), FIRST_HUD_SIZE*2 * (I >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*13, 15, 1);
+	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(F % 16), FIRST_HUD_SIZE*2*(F >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*14, 15, 1);
+	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(E % 16), FIRST_HUD_SIZE*2*(E >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2,  FIRST_HUD_PADDING + FIRST_HUD_SIZE*15, 15, 1);
+	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(DASH %16), FIRST_HUD_SIZE*2*(DASH >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*16, 15, 1);
+
+	for(int i = 0; i < 3; i++) {
+		draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*1, FIRST_HUD_SIZE*4 - 2, FIRST_HUD_SIZE, FIRST_HUD_SIZE + 2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11 + 4 + i*10, 16 + 2*FIRST_HUD_SIZE - 4, 1);
+	}
+
+	for(int r1 = 8; r1 < 40 + 8; r1++){
+		for(int c = 16; c < 16 + 64; c++){
+			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 4;
+		}
+	}
+	
+}
+
+
+void update_minimap(uint32_t old_screen, uint32_t current_screen) {
+
+	int sc_x = old_screen % OVERWORLD_MAPS_H;
+	int sc_y = old_screen / OVERWORLD_MAPS_H;
+	for(int r1 = 8 + sc_y*5; r1 < 8 + (sc_y + 1)*5; r1++){
+		for(int c = 16 + sc_x*4; c < 16 + (sc_x + 1) * 4; c++){
+			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 4;
+		}
+	}
+
+	sc_x = current_screen % OVERWORLD_MAPS_H;
+	sc_y = current_screen / OVERWORLD_MAPS_H;
+	for(int r1 = 8 + sc_y*5; r1 < 8 + (sc_y + 1)*5; r1++){
+		for(int c = 16 + sc_x*4; c < 16 + (sc_x + 1) * 4; c++){
+			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 7;
+		}
+	}
+}
 
 
 // ovo je za crtanje title intro screen-a
@@ -355,6 +417,15 @@ static void draw_background(
 	}
 }
 
+int check_collision(uint8_t curr_x, uint8_t curr_y) {
+	for(int i = 0; i < 26; i++) {
+		if(curr_x == walkable_tiles[i] && curr_y == walkable_tiles[i]) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
@@ -384,10 +455,11 @@ int main(void) {
 	gs.link.pos.y = Y_PADDING + 2 + 64;
 	gs.link.old_pos.x = gs.link.pos.x;
 	gs.link.old_pos.y = gs.link.pos.y;
-
+	gs.link.lives = 3;
 	volatile int draw_link = 0;
 	volatile int draw_bg = 1;
 	int started = 0;
+	int draw_HUD = 0;
 
 	// spreci linkica da se crta po title-screen-u
 
@@ -398,6 +470,8 @@ int main(void) {
 	uint8_t current_tileX = 0;
 	uint8_t current_tileY = 0;
 	uint8_t* collision_screen;
+
+	uint32_t old_screen;
 
 	while(1){
 		counter++;//ovo je pisano nogicama
@@ -421,7 +495,8 @@ int main(void) {
 	
 		if(joypad.start && !started) {
 			// neće sa start screena prelaziti na ovaj deo mape, ovo je samo test
-			gs.current_screen = 7*16;
+			gs.current_screen = 7*OVERWORLD_MAPS_H + 7;
+			old_screen = gs.current_screen;
 			y_padding = Y_PADDING;
 			draw_link = 1;
 			// prebaci se na paletu za ekrane i linka
@@ -430,6 +505,7 @@ int main(void) {
 			}
 			draw_bg = 1;
 			started = 1;
+			draw_HUD = 1;
 		}
 		/////////////////////////////////////
 		// Gameplay.
@@ -485,56 +561,38 @@ int main(void) {
 				}
 			}
 
-			//odje mrda mape levo desno
+			// prelaz s mape na mapu levo-desno
 			if(mov_x + gs.link.pos.x < 0) {
+				old_screen = gs.current_screen;
 				gs.current_screen--;
-				gs.link.pos.x = title_screen__w - 16;
+				gs.link.pos.x = title_screen__w - SPRITE_DIM;
 				draw_bg = 1;
 			}
-			else if(mov_x + gs.link.pos.x > title_screen__w - 16){ // dodao ja
-				gs.current_screen++;
-				printf("%d",gs.link.pos.x);
-				gs.link.pos.x = 0;
-				draw_bg = 1;				
-			}
-			//odje prestaje mrda mape levo desno
 			else if (mov_x + gs.link.pos.x >= title_screen__w - SPRITE_DIM) {
-				gs.link.pos.x = title_screen__w - SPRITE_DIM;
+				old_screen = gs.current_screen;
+				gs.current_screen++;
+				gs.link.pos.x = 0;
+				draw_bg = 1;
 			}
-			else if(((current_tileX != 2) || (current_tileY != 2)) && ((current_tileX != 14) || (current_tileY != 14)) 
-				&& ((current_tileX != 131) || (current_tileY != 131)) && ((current_tileX != 137) || (current_tileY != 137))) {//16*10
-				
-			}
-			else {
+			else if(!check_collision(current_tileX, current_tileY)) {
 				gs.link.pos.x += mov_x;
 			}
-			
-			//odje mrda mape gore dole
-			if(mov_y + gs.link.pos.y < Y_PADDING){
-				gs.current_screen -= 16;
-				gs.link.pos.y = title_screen__h - 25;
-				draw_bg = 1;
 
-			}else if(mov_y + gs.link.pos.y > title_screen__h - 25){
-				gs.current_screen += 16;
+			
+			// prelaz s mape na mapu gore-dole
+			if(mov_y + gs.link.pos.y < Y_PADDING){
+				old_screen = gs.current_screen;
+				gs.current_screen -= OVERWORLD_MAPS_H;
+				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
+				draw_bg = 1;
+			}
+			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
+				old_screen = gs.current_screen;
+				gs.current_screen += OVERWORLD_MAPS_H;
 				gs.link.pos.y = Y_PADDING;
 				draw_bg = 1;
-
 			}
-			//odje prestaje mrda mape gore dole
-			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
-				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
-			}
-			else if(((current_tileX != 2) || (current_tileY != 2)) && ((current_tileX != 22) || (current_tileY != 22))
-				&& ((current_tileX != 14) || (current_tileY != 14)) && ((current_tileX != 131) || (current_tileY != 131))
-				&& ((current_tileX != 137) || (current_tileY != 137))) {//16*10
-				//printf("X = %d \n Y= %d\n", current_tileX, current_tileY);
-			}
-			else if((current_tileX == 22) && (current_tileY == 22)) {//samo test za pecinu kad je budemo imali
-				gs.current_screen = 16*3+1;
-				draw_bg = 1;
-			}
-			else {
+			else if(!check_collision(current_tileX, current_tileY)) {
 				gs.link.pos.y += mov_y;
 			}
 
@@ -552,12 +610,15 @@ int main(void) {
 		// Draw in buffer while it is in VSync.
 		
 		
-		if(draw_bg == 1){
+		if(draw_bg == 1 && draw_HUD == 1){
 			for(uint16_t r1 = 0; r1 < SCREEN_IDX4_H; r1++){
-				for(uint16_t c8 = 0; c8 < SCREEN_IDX4_W; c8++){
-					unpack_idx4_p32[r1*SCREEN_IDX4_W + c8] = 0x00000000;
+				for(uint16_t c = 0; c < SCREEN_IDX4_W; c++){
+					unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 0x00000000;
 				}
 			}
+
+			init_HUD();
+			draw_HUD = 0;
 		}
 		
 		if(draw_bg == 1 && !started) {
@@ -569,25 +630,8 @@ int main(void) {
 
 		if(draw_bg == 1 && started){
 			draw_tiles(screens[gs.current_screen], tile_num_x, tile_num_y, 0, y_padding);
+			update_minimap(old_screen, gs.current_screen);
 			draw_bg = 0;
-
-			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10, 1);
-			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*2, 1);
-			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*3, 1);
-
-			draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 6, 1);
-			draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 22, 1);
-			draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 30, 1);
-
-			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);
-			draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
-
-			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*22, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11, 15, 1);
-			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*10, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*12, 15, 1);
-			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*13, 15, 1);
-			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*30, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*14, 15, 1);
-			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*28, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*15, 15, 1);
-			draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*22, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*16, 15, 1);
 		}
 		
 

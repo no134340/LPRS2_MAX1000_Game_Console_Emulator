@@ -78,11 +78,11 @@ for file in img_names:
                     for j in range(16):
                         if ta[i, j] == map_array[x + i, y + j]:
                             match += 1
-                if match > 16*16 - 10:
+                if match > 16*16 - 6:
                     ind = idx
                     break
             if ind == -1:
-                indices.append(144)
+                indices.append(150)
             else:
                 indices.append(ind)
 
