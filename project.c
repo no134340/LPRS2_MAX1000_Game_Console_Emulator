@@ -345,8 +345,15 @@ void init_HUD() {
 	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 22, 1);
 	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 30, 1);
 
-	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 0, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3, 6, 1);//0
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 0, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3, 22, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 0, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3, 30, 1);
+
+
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1);//mac bato
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
+
 
 	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(DASH % 16), FIRST_HUD_SIZE*2*(DASH >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11, 15, 1);
 	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(L % 16), FIRST_HUD_SIZE*2*(L >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*12, 15, 1);
