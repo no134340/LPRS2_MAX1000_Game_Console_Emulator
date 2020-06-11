@@ -81,6 +81,9 @@ typedef struct {
 #define Y_DIAMOND 6
 #define Y_KEY 22
 #define Y_BOMB 30
+
+#define LINK_ATTACK_Y 72
+#define VOID_BETWEEN_LINKS 8
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
@@ -487,6 +490,10 @@ int main(void) {
 	int started = 0;
 	int draw_HUD = 0;
 
+	volatile int draw_sword;
+	int linkic_x=0;
+	int size_y=0;
+	int size_x=0;
 	// spreci linkica da se crta po title-screen-u
 
 	int counter = 0;
@@ -573,6 +580,9 @@ int main(void) {
 				current_tileX = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (gs.link.pos.x+2)/TILE_SIZE];//lakse se nabada onda, nije frkica ako nogice budu blizu tile
 				current_tileY = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (gs.link.pos.x + SPRITE_DIM-2)/TILE_SIZE];
 				last_link_draw = 1;
+			}
+			else if(joypad.b) {
+				draw_sword = 1;
 			}
 			else {
 				if(gs.link.anim.orientation == LEFT) {
@@ -685,6 +695,40 @@ int main(void) {
 				1
 			);
 			draw_link = 0;
+		}
+
+		if(draw_sword == 1) {
+
+			if(gs.link.anim.orientation == DOWN) {
+				linkic_x = 0;
+				size_y =2 *SPRITE_DIM;
+				size_x = SPRITE_DIM;
+			}
+			else if(gs.link.anim.orientation == LEFT) {
+				linkic_x = SPRITE_DIM + VOID_BETWEEN_LINKS;
+				size_x = 2*SPRITE_DIM;
+				size_y = SPRITE_DIM;
+			}
+			else if(gs.link.anim.orientation == UP) {
+				linkic_x = 2*VOID_BETWEEN_LINKS + 3*SPRITE_DIM;
+				size_x = SPRITE_DIM;
+				size_y = 2*SPRITE_DIM;
+			}
+			else {
+				linkic_x = 4*SPRITE_DIM + 3*VOID_BETWEEN_LINKS;
+				size_x = 2*SPRITE_DIM;
+				size_y = SPRITE_DIM;
+			}
+			draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				linkic_x,
+				LINK_ATTACK_Y,
+				size_x, size_y,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+			);
+			draw_sword = 0;
 		}
 
 	}
