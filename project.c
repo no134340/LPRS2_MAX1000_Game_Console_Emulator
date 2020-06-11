@@ -78,6 +78,9 @@ typedef struct {
 
 #define OVERWORLD_MAPS_V 8
 
+#define Y_DIAMOND 6
+#define Y_KEY 22
+#define Y_BOMB 30
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
@@ -336,18 +339,34 @@ static void update_background (
 
 }
 
+void draw_HUD_number(uint16_t x,uint16_t location, uint16_t height) {
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 2 * x * FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3 +location*FIRST_HUD_SIZE, height, 1);
+}
+
+void number_generator(uint16_t x,uint16_t height) {
+	if( x / 10 != 0) {
+		draw_HUD_number(x / 10, 0, height);
+		draw_HUD_number(x % 10, 1, height);
+	}
+	else {
+		draw_HUD_number(x, 0, height);
+	}
+}
+
+
+
 void init_HUD() {
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10, 1);
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*2, 1);
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE, FIRST_HUD_SIZE, 0 + FIRST_HUD_PADDING, 10+FIRST_HUD_SIZE*3, 1);
 
-	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 6, 1);
-	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 22, 1);
-	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, 30, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, Y_DIAMOND, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, Y_KEY, 1);
+	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, Y_BOMB, 1);
 
-	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 0, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3, 6, 1);//0
-	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 0, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3, 22, 1);
-	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 0, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3, 30, 1);
+	number_generator(56,Y_DIAMOND);
+	number_generator(5,Y_KEY);
+	number_generator(7,Y_BOMB);
 
 
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
