@@ -8,7 +8,6 @@
 #include "title_screen_idx4.h"
 #include "screens_idx4.h"
 #include "screen_tile_index.h"
-#include "cave_idx4.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -354,7 +353,7 @@ void init_HUD() {
 
 	for(int r1 = 8; r1 < 40 + 8; r1++){
 		for(int c = 16; c < 16 + 64; c++){
-			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 4;
+			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 5;
 		}
 	}
 	
@@ -367,7 +366,7 @@ void update_minimap(uint32_t old_screen, uint32_t current_screen) {
 	int sc_y = old_screen / OVERWORLD_MAPS_H;
 	for(int r1 = 8 + sc_y*5; r1 < 8 + (sc_y + 1)*5; r1++){
 		for(int c = 16 + sc_x*4; c < 16 + (sc_x + 1) * 4; c++){
-			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 4;
+			unpack_idx4_p32[r1*SCREEN_IDX4_W + c] = 5;
 		}
 	}
 
