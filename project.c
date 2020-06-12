@@ -202,8 +202,9 @@ static void draw_sprite_from_atlas(
 	uint16_t atlas_w8 = shift_div_with_round_up(atlas_w, 3);
 	uint16_t src_x8 = shift_div_with_round_down(src_x, 3);
 	
-
+	
 	for(uint16_t y = 0; y < h; y++){
+		int cnt = 0;
 		for(uint16_t x8 = 0; x8 < src_w8; x8++){
 			uint32_t src_idx = 
 				(src_y+y)*atlas_w8 +
@@ -214,6 +215,10 @@ static void draw_sprite_from_atlas(
 			uint32_t pixel = sprite_atlas[src_idx];
 			for(uint8_t i = 0; i < 8; i++) {
 				// provera svakog piksela da li je crn (tj. da li je index 0)
+				cnt++;
+				if(cnt > w) {
+					break;
+				}
 				uint32_t px = (pixel>>(4*i))&0b1111;
 				// ako jeste, ne crtaj ga!! (samo ako je sprajt. ako je pozadina,
 				// onda je to deo pozadine i treba crtati taj crni piksel)
@@ -335,9 +340,9 @@ void init_HUD() {
 	number_generator(0,Y_BOMB);
 
 
-	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+8, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
 	// draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1); ovo neka ostane, trebace za kasnije kada se uvede intro kada udje u pecinu i pokupi mac.
-	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+8, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
 
 
 	draw_sprite_from_atlas(fonts_red__p, fonts_red__w, FIRST_HUD_SIZE*2*(DASH % 16), FIRST_HUD_SIZE*2*(DASH >> 4), FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11, 15, 1);
@@ -690,27 +695,47 @@ int main(void) {
 			uint16_t pos_x = gs.link.pos.x;
 			uint16_t pos_y = gs.link.pos.y;
 
+			int delta_x = 0;
+			int delta_y = 0;
+
 			if(gs.link.anim.orientation == DOWN) {
 				linkic_x = 0;
 				size_y =2 *SPRITE_DIM;
 				size_x = SPRITE_DIM;
+				if(pos_y + size_y > title_screen__h - 9) {
+					size_y -= (pos_y + size_y - (title_screen__h - 9));
+				}
 			}
 			else if(gs.link.anim.orientation == LEFT) {
 				linkic_x = SPRITE_DIM + VOID_BETWEEN_LINKS;
 				size_x = 2*SPRITE_DIM;
 				size_y = SPRITE_DIM;
-				pos_x -= SPRITE_DIM;
+				if(pos_x > SPRITE_DIM) {
+					pos_x -= SPRITE_DIM;
+				} else {
+					delta_x = SPRITE_DIM - pos_x;
+					pos_x = 0;
+				}
+				
 			}
 			else if(gs.link.anim.orientation == UP) {
 				linkic_x = 2*VOID_BETWEEN_LINKS + 3*SPRITE_DIM;
 				size_x = SPRITE_DIM;
 				size_y = 2*SPRITE_DIM;
-				pos_y -= SPRITE_DIM;
+				if(pos_y > SPRITE_DIM + Y_PADDING) {
+					pos_y -= SPRITE_DIM;
+				} else {
+					delta_y = Y_PADDING + SPRITE_DIM - pos_y;
+					pos_y = Y_PADDING;
+				}
 			}
 			else {
 				linkic_x = 4*SPRITE_DIM + 3*VOID_BETWEEN_LINKS;
 				size_x = 2*SPRITE_DIM;
 				size_y = SPRITE_DIM;
+				if(pos_x + size_x > title_screen__w) {
+					size_x -= ((pos_x + size_x) - title_screen__w);
+				}
 			}
 
 			update_background(
@@ -722,19 +747,13 @@ int main(void) {
 				gs.link.old_pos.y
 			);
 
-			if(size_x + gs.link.pos.x >= title_screen__w) {
-				size_x = title_screen__w - gs.link.pos.x;
-			}
-			if(size_y + gs.link.pos.y >= title_screen__h - 9) {
-				size_y = title_screen__h - 9 - gs.link.pos.y;
-			}
 
 
 			draw_sprite_from_atlas(
 				link_sheet__p, link_sheet__w,
-				linkic_x,
-				LINK_ATTACK_Y,
-				size_x, size_y,
+				linkic_x + delta_x,
+				LINK_ATTACK_Y + delta_y,
+				size_x - delta_x, size_y - delta_y,
 				pos_x,
 				pos_y,
 				1
