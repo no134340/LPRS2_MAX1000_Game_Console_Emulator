@@ -329,13 +329,13 @@ void init_HUD() {
 	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, Y_KEY, 1);
 	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + FIRST_HUD_SIZE-3, Y_BOMB, 1);
 
-	number_generator(56,Y_DIAMOND);
-	number_generator(5,Y_KEY);
-	number_generator(7,Y_BOMB);
+	number_generator(0,Y_DIAMOND);
+	number_generator(0,Y_KEY);
+	number_generator(0,Y_BOMB);
 
 
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
-	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1);//mac bato
+	// draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1); ovo neka ostane, trebace za kasnije kada se uvede intro kada udje u pecinu i pokupi mac.
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+4, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
 
 
@@ -715,10 +715,10 @@ int main(void) {
 				gs.link.old_pos.y
 			);
 
-			if(size_x + gs.link.pos.x > title_screen__w) {
+			if(size_x + gs.link.pos.x >= title_screen__w) {
 				size_x = title_screen__w - gs.link.pos.x;
 			}
-			if(size_y + gs.link.pos.y > title_screen__h - 9) {
+			if(size_y + gs.link.pos.y >= title_screen__h - 9) {
 				size_y = title_screen__h - 9 - gs.link.pos.y;
 			}
 
