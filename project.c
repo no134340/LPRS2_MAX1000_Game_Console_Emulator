@@ -290,7 +290,7 @@ static void update_background (
 
 	for (int i = 0; i < 3; i++) {
 		for(int j = 0; j < 3; j++) {
-			if(src_y < Y_PADDING + title_screen__h - j*SPRITE_DIM - 8 && src_x < title_screen__w - i*SPRITE_DIM) {
+			if(dst_y - rem_y + j*SPRITE_DIM < title_screen__h - 9 && dst_x < title_screen__w - i*SPRITE_DIM)  {
 				tile_ind_x += i;
 				tile_ind_y += j;
 				tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
@@ -582,10 +582,10 @@ int main(void) {
 			if(mov_y + gs.link.pos.y < Y_PADDING){
 				old_screen = gs.current_screen;
 				gs.current_screen -= OVERWORLD_MAPS_H;
-				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9;
+				gs.link.pos.y = title_screen__h - SPRITE_DIM - 9 - 1;
 				draw_bg = 1;
 			}
-			else if (mov_y + gs.link.pos.y >= title_screen__h - 9 - SPRITE_DIM) {
+			else if (mov_y + gs.link.pos.y > title_screen__h - 9 - SPRITE_DIM) {
 				old_screen = gs.current_screen;
 				gs.current_screen += OVERWORLD_MAPS_H;
 				gs.link.pos.y = Y_PADDING;
