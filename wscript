@@ -74,9 +74,15 @@ def build(bld):
 	screen_imgs = sorted(
 		glob.glob('images/tiles.png') +
 		glob.glob('images/link_sheet.png') + 
-		glob.glob('images/fonts_red.png') + 
-		glob.glob('images/fonts_white.png') + 
+		glob.glob('images/fonts_red.png') +
+		glob.glob('images/fonts_white.png') +  
 		glob.glob('images/HUD_sprites.png')
+	)
+
+	cave_sprites = sorted(
+		glob.glob('images/loshmee.png') +
+		glob.glob('images/dungeon.png') + 
+		glob.glob('images/HUD_sprites_help.png')
 	)
 
 
@@ -90,6 +96,13 @@ def build(bld):
 			'-f IDX4 -p 0x000000 -v',
 		source = screen_imgs,
 		target = ['screens_idx4.c', 'screens_idx4.h']
+	)
+
+	bld(
+		rule = '${PYTHON} ${IMG_TO_SRC} -o ${TGT[0]} ${SRC} ' + \
+			'-f IDX4 -p 0x000000 -v',
+		source = cave_sprites,
+		target = ['cave_idx4.c', 'cave_idx4.h']
 	)
 
 	bld(
