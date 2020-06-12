@@ -288,9 +288,10 @@ static void update_background (
 	uint16_t ind_vert;
 	uint16_t ind_horiz;
 
-	for (int i = 0; i < 3; i++) {
-		for(int j = 0; j < 3; j++) {
-			if(dst_y - rem_y + j*SPRITE_DIM < title_screen__h - 9 && dst_x < title_screen__w - i*SPRITE_DIM)  {
+	for (int i = -2; i < 3; i++) {
+		for(int j = -2; j < 3; j++) {
+			if(dst_y - rem_y + j*SPRITE_DIM < title_screen__h - 9 && dst_x < title_screen__w - i*SPRITE_DIM &&
+			dst_y + j*SPRITE_DIM > Y_PADDING && dst_x + i*SPRITE_DIM > 0)  {
 				tile_ind_x += i;
 				tile_ind_y += j;
 				tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
@@ -634,6 +635,7 @@ int main(void) {
 		}
 
 		if(refresh_sword == 1 && !draw_sword) {
+			
 			update_background(
 				screens[gs.current_screen], TILES_H,
 				gs.link.old_pos.x,
@@ -685,6 +687,9 @@ int main(void) {
 
 		if(draw_sword == 1) {
 
+			uint16_t pos_x = gs.link.pos.x;
+			uint16_t pos_y = gs.link.pos.y;
+
 			if(gs.link.anim.orientation == DOWN) {
 				linkic_x = 0;
 				size_y =2 *SPRITE_DIM;
@@ -694,11 +699,13 @@ int main(void) {
 				linkic_x = SPRITE_DIM + VOID_BETWEEN_LINKS;
 				size_x = 2*SPRITE_DIM;
 				size_y = SPRITE_DIM;
+				pos_x -= SPRITE_DIM;
 			}
 			else if(gs.link.anim.orientation == UP) {
 				linkic_x = 2*VOID_BETWEEN_LINKS + 3*SPRITE_DIM;
 				size_x = SPRITE_DIM;
 				size_y = 2*SPRITE_DIM;
+				pos_y -= SPRITE_DIM;
 			}
 			else {
 				linkic_x = 4*SPRITE_DIM + 3*VOID_BETWEEN_LINKS;
@@ -728,8 +735,8 @@ int main(void) {
 				linkic_x,
 				LINK_ATTACK_Y,
 				size_x, size_y,
-				gs.link.pos.x,
-				gs.link.pos.y,
+				pos_x,
+				pos_y,
 				1
 			);
 			draw_sword = 0;
