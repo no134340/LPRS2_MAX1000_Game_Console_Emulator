@@ -273,73 +273,35 @@ static void update_background (
 ) {
 	// indeksi u matrici sa tile-ovima moraju biti deljivi sa veličinom tile-a (da bi smo uzeli ceo tile)
 	/*
-		Ako ovo nije slušaj, naš link će preklopiti makar 4 tile-a u najgorem slučaju,
-		pa moramo iscrtati sva 4.
+		Ako ovo nije slušaj, naš link će preklopiti makar 9 tile-a u najgorem slučaju,
+		pa moramo iscrtati svih 9
 	*/
-	if((src_x % SPRITE_DIM) != 0 || (src_y % SPRITE_DIM) != 0 ) {
-		uint16_t rem_x = src_x % SPRITE_DIM;
-		uint16_t rem_y = src_y % SPRITE_DIM;
-		
-		uint16_t tile_ind_x = (src_x - rem_x) / SPRITE_DIM;
-		uint16_t tile_ind_y = (src_y - rem_y) / SPRITE_DIM;
 
-		// upper left
-		uint8_t tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
-		uint16_t ind_vert = tile_ind / tile_num_x;
-		uint16_t ind_horiz = tile_ind % tile_num_x;
-		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x - rem_x, dst_y - rem_y, 0);
+	uint16_t rem_x = src_x % SPRITE_DIM;
+	uint16_t rem_y = src_y % SPRITE_DIM;
+	
+	uint16_t tile_ind_x = (src_x - rem_x) / SPRITE_DIM;
+	uint16_t tile_ind_y = (src_y - rem_y) / SPRITE_DIM;
 
-		
-		//upper right
-		if(src_x < title_screen__w - SPRITE_DIM) {
-			tile_ind_x += 1;
-			tile_ind_y += 0;
-			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
-			ind_vert = tile_ind / tile_num_x;
-			ind_horiz = tile_ind % tile_num_x;
-			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + SPRITE_DIM - rem_x, dst_y - rem_y, 0);
-			tile_ind_x -= 1;
-			tile_ind_y -= 0;
-		}
+	// upper left
+	uint8_t tile_ind;
+	uint16_t ind_vert;
+	uint16_t ind_horiz;
 
-		// lower left
-		if(src_y < Y_PADDING + title_screen__h - 8 - SPRITE_DIM) {
-			tile_ind_x += 0;
-			tile_ind_y += 1;
-			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
-			ind_vert = tile_ind / tile_num_x;
-			ind_horiz = tile_ind % tile_num_x;
-			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM,ind_vert*SPRITE_DIM, w, h, dst_x  - rem_x, dst_y + SPRITE_DIM - rem_y, 0);
-			tile_ind_x -= 0;
-			tile_ind_y -= 1;
-		}
-
-		// lower right
-		if(src_y < Y_PADDING + title_screen__h - SPRITE_DIM - 8 && src_x < title_screen__w - SPRITE_DIM) {
-			tile_ind_x += 1;
-			tile_ind_y += 1;
-			tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
-			ind_vert = tile_ind / tile_num_x;
-			ind_horiz = tile_ind % tile_num_x;
-			draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + SPRITE_DIM - rem_x, dst_y + SPRITE_DIM - rem_y, 0);
-			tile_ind_x -= 1;
-			tile_ind_y -= 1;
+	for (int i = 0; i < 3; i++) {
+		for(int j = 0; j < 3; j++) {
+			if(src_y < Y_PADDING + title_screen__h - j*SPRITE_DIM - 8 && src_x < title_screen__w - i*SPRITE_DIM) {
+				tile_ind_x += i;
+				tile_ind_y += j;
+				tile_ind = sprite_atlas[tile_ind_y*atlas_w + tile_ind_x];
+				ind_vert = tile_ind / tile_num_x;
+				ind_horiz = tile_ind % tile_num_x;
+				draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x + i*SPRITE_DIM - rem_x, dst_y + j*SPRITE_DIM - rem_y, 0);
+				tile_ind_x -= i;
+				tile_ind_y -= j;
+			}
 		}
 	}
-	else {
-		/*
-			Ako jesu i x i y položaj deljivi sa veličinom tile-a,
-			onda link preklapa samo 1 tile i crtamo samo njega.
-		*/
-		uint16_t tile_ind_x = src_x / SPRITE_DIM;
-		uint16_t tile_ind_y = src_y / SPRITE_DIM;
-
-		uint8_t tile_ind = sprite_atlas[tile_ind_y*SPRITE_DIM + tile_ind_x];
-		uint16_t ind_vert = tile_ind / tile_num_x;
-		uint16_t ind_horiz = tile_ind % tile_num_x;
-		draw_sprite_from_atlas(tiles__p, tiles__w, ind_horiz*SPRITE_DIM, ind_vert*SPRITE_DIM, w, h, dst_x, dst_y, 0);
-	}
-
 }
 
 void draw_HUD_number(uint16_t x,uint16_t location, uint16_t height) {
@@ -490,7 +452,8 @@ int main(void) {
 	int started = 0;
 	int draw_HUD = 0;
 
-	volatile int draw_sword;
+	volatile int draw_sword = 0;
+	int refresh_sword = 0; // da li smo prethodno bili nacrtali sword a sada moramo da update pozadinu za njega?
 	int linkic_x=0;
 	int size_y=0;
 	int size_x=0;
@@ -669,9 +632,32 @@ int main(void) {
 			update_minimap(old_screen, gs.current_screen);
 			draw_bg = 0;
 		}
+
+		if(refresh_sword == 1 && !draw_sword) {
+			update_background(
+				screens[gs.current_screen], TILES_H,
+				gs.link.old_pos.x,
+				gs.link.old_pos.y - Y_PADDING,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.old_pos.x,
+				gs.link.old_pos.y
+			);
+
+			draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+			);
+
+			refresh_sword = 0;
+		}
 		
 
-		if(draw_link == 1) {
+		if(draw_link == 1 && draw_sword != 1) {
 			// Apdejtuj samo pozadinu oko Linka.
 			update_background(
 				screens[gs.current_screen], TILES_H,
@@ -719,6 +705,24 @@ int main(void) {
 				size_x = 2*SPRITE_DIM;
 				size_y = SPRITE_DIM;
 			}
+
+			update_background(
+				screens[gs.current_screen], TILES_H,
+				gs.link.old_pos.x,
+				gs.link.old_pos.y - Y_PADDING,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.old_pos.x,
+				gs.link.old_pos.y
+			);
+
+			if(size_x + gs.link.pos.x > title_screen__w) {
+				size_x = title_screen__w - gs.link.pos.x;
+			}
+			if(size_y + gs.link.pos.y > title_screen__h - 9) {
+				size_y = title_screen__h - 9 - gs.link.pos.y;
+			}
+
+
 			draw_sprite_from_atlas(
 				link_sheet__p, link_sheet__w,
 				linkic_x,
@@ -729,6 +733,7 @@ int main(void) {
 				1
 			);
 			draw_sword = 0;
+			refresh_sword = 1;
 		}
 
 	}
