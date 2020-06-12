@@ -8,6 +8,7 @@
 #include "title_screen_idx4.h"
 #include "screens_idx4.h"
 #include "screen_tile_index.h"
+#include "cave_idx4.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
