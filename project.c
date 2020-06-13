@@ -341,7 +341,7 @@ void init_HUD() {
 
 
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+8, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
-	// draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1); ovo neka ostane, trebace za kasnije kada se uvede intro kada udje u pecinu i pokupi mac.
+	//ovo neka ostane, trebace za kasnije kada se uvede intro kada udje u pecinu i pokupi mac.
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+8, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
 
 
@@ -362,6 +362,9 @@ void init_HUD() {
 		}
 	}
 	
+}
+void draw_HUD_sword() {
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1);
 }
 
 
@@ -422,6 +425,142 @@ int check_collision(uint8_t curr_x, uint8_t curr_y) {
 	}
 	return 1;
 }
+void cave_update_background(int x, int y, int delete) {
+	draw_sprite_from_atlas(dungeon__p, dungeon__w, x, y - Y_PADDING, SPRITE_DIM, delete, x, y, 0);
+}
+
+void cave_animation(game_state_t gs) {
+	int tune_anim = 250000;
+	font_indices text[] = {I, T, APO, S, DASH, DASH, D, A, N, G, E, R, O, U, S, DASH, T, O, DASH, G, O, AND, A, L, O, N, E, EXCL, DASH, H, E, R, E, DASH, T, A, K, E, DASH, T, H, I, S, EXCL};
+	draw_sprite_from_atlas(dungeon__p, dungeon__w, 0, 0, dungeon__w, dungeon__h-8, 0, Y_PADDING, 0);
+	int localX = 120;
+	int localY = Y_PADDING + 135;
+	gs.link.pos.x = localX;
+	gs.link.pos.y = localY;
+	int loshmeeX = localX;
+	int loshmeeY = Y_PADDING+65;
+	int loshmee_orientation = 0;
+	int animation_state = 0;
+	int lineY = Y_PADDING+30;
+	int lineX = 40;
+	int k = 0;
+	int go = 1;
+	draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+			);
+	draw_sprite_from_atlas(
+				loshmee__p, loshmee__w,
+				0,
+				0,
+				SPRITE_DIM, SPRITE_DIM*2,
+				loshmeeX,
+				loshmeeY,
+				1
+			);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, localX+4, loshmeeY+40, 1);
+	int count = 0;
+	while(go) {
+		count++;
+		for(int i = 0; i<tune_anim;i++){
+
+		}
+		if(count == 500) {
+			count = 0;
+			if((gs.link.pos.y >= Y_PADDING + 130) && !animation_state) {
+				cave_update_background(gs.link.pos.x, gs.link.pos.y, 16);
+				gs.link.pos.y -= 5;
+				gs.link.anim.orientation_state ^= 1;
+				draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+			);
+			}
+			else if(!animation_state) {
+				animation_state = 1;
+			}
+			if((animation_state == 1) && (k < 44)) {
+				loshmee_orientation ^= 1;
+				draw_sprite_from_atlas(
+				loshmee__p, loshmee__w,
+				SPRITE_DIM*loshmee_orientation,
+				0,
+				SPRITE_DIM, SPRITE_DIM*2,
+				loshmeeX,
+				loshmeeY,
+				1
+				);
+				if((text[k] != DASH) && (text[k] != AND)) {
+					draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 
+						FIRST_HUD_SIZE*2*(text[k] % 16), FIRST_HUD_SIZE*2*(text[k] >> 4), 
+						FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, lineX, 
+						lineY, 1);
+				}
+				if(text[k] != AND) {
+					lineX += 8;
+				}
+				else {
+					lineX = 40;
+					lineY += 16;
+				}
+				k++;
+				if(k == 44){
+					animation_state=2;
+				}
+			}
+			if((animation_state == 2) && (gs.link.pos.y >= loshmeeY+40)) {
+				cave_update_background(gs.link.pos.x, gs.link.pos.y, 16);
+				gs.link.pos.y -= 5;
+				gs.link.anim.orientation_state ^= 1;
+				draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+				);
+			}
+			else if(animation_state == 2) {
+				draw_HUD_sword();
+				animation_state = 3;
+				gs.link.anim.orientation = DOWN;
+			}
+			if((animation_state == 3) && (gs.link.pos.y <= localY+5)) {
+				cave_update_background(gs.link.pos.x, gs.link.pos.y, 5);
+				gs.link.anim.orientation_state ^= 1;
+				gs.link.pos.y += 5;
+				draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+				);
+			}
+			else if(animation_state == 3) {
+				animation_state = 4;
+			}
+			if(animation_state == 4) {
+				go = 0;
+			}
+			
+		}
+	}
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -472,6 +611,9 @@ int main(void) {
 	uint8_t current_tileX = 0;
 	uint8_t current_tileY = 0;
 	uint8_t* collision_screen;
+
+	int has_sword = 0;
+	int in_cave = 0;
 
 	uint32_t old_screen;
 
@@ -550,7 +692,7 @@ int main(void) {
 				current_tileY = collision_screen[((mov_y + gs.link.pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (gs.link.pos.x + SPRITE_DIM-2)/TILE_SIZE];
 				last_link_draw = 1;
 			}
-			else if(joypad.b) {
+			else if((joypad.b) && (has_sword)) {
 				draw_sword = 1;
 			}
 			else {
@@ -563,6 +705,13 @@ int main(void) {
 				if(last_link_draw) {//samo jednom ulazi ovde dok se ne pomeri ponovo
 					draw_link = 1;
 					last_link_draw = 0;
+				}
+			}
+
+			if(current_tileX == 22 && current_tileY == 22) {
+				if(!in_cave) {
+					in_cave = 1;
+					has_sword = 1;
 				}
 			}
 
@@ -596,6 +745,9 @@ int main(void) {
 				gs.current_screen += OVERWORLD_MAPS_H;
 				gs.link.pos.y = Y_PADDING;
 				draw_bg = 1;
+				if(!in_cave) {
+					has_sword = 1;
+				}
 			}
 			else if(!check_collision(current_tileX, current_tileY)) {
 				gs.link.pos.y += mov_y;
@@ -631,6 +783,16 @@ int main(void) {
 			title_screen__p, title_screen__w, title_screen__h - y_padding, 0, y_padding
 			);
 			draw_bg = 0;
+		}
+
+		if(in_cave == 1) {
+			cave_animation(gs);
+			gs.link.pos.x = 65;
+			gs.link.pos.y = Y_PADDING+36;//35
+			in_cave = 2;
+			draw_bg = 1;
+			draw_link = 1;
+			gs.link.anim.orientation = DOWN;
 		}
 
 		if(draw_bg == 1 && started){
