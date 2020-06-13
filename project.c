@@ -456,7 +456,7 @@ void cave_animation(game_state_t gs) {
 			);
 	draw_sprite_from_atlas(
 				loshmee__p, loshmee__w,
-				0,
+				SPRITE_DIM*loshmee_orientation,
 				0,
 				SPRITE_DIM, SPRITE_DIM*2,
 				loshmeeX,
@@ -493,6 +493,7 @@ void cave_animation(game_state_t gs) {
 			}
 			if((animation_state == 1) && (k < 44)) {
 				loshmee_orientation ^= 1;
+				cave_update_background(loshmeeX, loshmeeY, 32);
 				draw_sprite_from_atlas(
 				loshmee__p, loshmee__w,
 				SPRITE_DIM*loshmee_orientation,
@@ -540,7 +541,7 @@ void cave_animation(game_state_t gs) {
 				gs.link.anim.orientation = DOWN;
 			}
 			if((animation_state == 3) && (gs.link.pos.y <= localY+5)) {
-				cave_update_background(gs.link.pos.x, gs.link.pos.y, 15);
+				cave_update_background(gs.link.pos.x, gs.link.pos.y-1, 15);
 				gs.link.anim.orientation_state ^= 1;
 				gs.link.pos.y += 5;
 				draw_sprite_from_atlas(
@@ -549,7 +550,7 @@ void cave_animation(game_state_t gs) {
 				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
 				SPRITE_DIM, SPRITE_DIM,
 				gs.link.pos.x,
-				gs.link.pos.y,
+				gs.link.pos.y-1,
 				1
 				);
 			}
