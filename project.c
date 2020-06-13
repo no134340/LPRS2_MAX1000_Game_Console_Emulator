@@ -364,7 +364,7 @@ void init_HUD() {
 	
 }
 void draw_HUD_sword() {
-	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1);
 }
 
 
@@ -430,7 +430,7 @@ void cave_update_background(int x, int y, int delete) {
 }
 
 void cave_animation(game_state_t gs) {
-	int tune_anim = 250000;
+	int tune_anim = 100000;
 	font_indices text[] = {I, T, APO, S, DASH, DASH, D, A, N, G, E, R, O, U, S, DASH, T, O, DASH, G, O, AND, A, L, O, N, E, EXCL, DASH, H, E, R, E, DASH, T, A, K, E, DASH, T, H, I, S, EXCL};
 	draw_sprite_from_atlas(dungeon__p, dungeon__w, 0, 0, dungeon__w, dungeon__h-8, 0, Y_PADDING, 0);
 	int localX = 120;
@@ -463,7 +463,7 @@ void cave_animation(game_state_t gs) {
 				loshmeeY,
 				1
 			);
-	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE/2+2, FIRST_HUD_SIZE*2, localX+4, loshmeeY+40, 1);
+	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE, FIRST_HUD_SIZE*2, localX+4, loshmeeY+40, 1);
 	int count = 0;
 	while(go) {
 		count++;
@@ -471,6 +471,8 @@ void cave_animation(game_state_t gs) {
 
 		}
 		if(count == 500) {
+			WAIT_UNITL_0(gpu_p32[2]);
+			WAIT_UNITL_1(gpu_p32[2]);
 			count = 0;
 			if((gs.link.pos.y >= Y_PADDING + 130) && !animation_state) {
 				cave_update_background(gs.link.pos.x, gs.link.pos.y, 16);
@@ -538,7 +540,7 @@ void cave_animation(game_state_t gs) {
 				gs.link.anim.orientation = DOWN;
 			}
 			if((animation_state == 3) && (gs.link.pos.y <= localY+5)) {
-				cave_update_background(gs.link.pos.x, gs.link.pos.y, 5);
+				cave_update_background(gs.link.pos.x, gs.link.pos.y, 15);
 				gs.link.anim.orientation_state ^= 1;
 				gs.link.pos.y += 5;
 				draw_sprite_from_atlas(
