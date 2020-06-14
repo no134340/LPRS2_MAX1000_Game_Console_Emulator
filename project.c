@@ -617,6 +617,7 @@ int main(void) {
 
 	int has_sword = 0;
 	int in_cave = 0;
+	int delay_cave = 0;
 
 	uint32_t old_screen;
 
@@ -712,10 +713,14 @@ int main(void) {
 			}
 
 			if(current_tileX == 22 && current_tileY == 22) {
-				if(!in_cave) {
+				if(!in_cave && (delay_cave == 15)) {
 					in_cave = 1;
 					has_sword = 1;
 				}
+				delay_cave++;
+			}
+			else {
+				delay_cave = 0;
 			}
 
 			// prelaz s mape na mapu levo-desno
