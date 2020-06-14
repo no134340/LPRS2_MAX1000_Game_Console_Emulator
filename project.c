@@ -910,19 +910,6 @@ int main(void) {
 			gs.link.anim.orientation = DOWN;
 		}
 //ovde je bilo
-		if(draw_enemies[0]) {
-			for(int i = 0; i < number_of_enemies;i++) {
-				update_background(
-				screens[gs.current_screen], TILES_H,
-				enemies[i].pos.x,
-				enemies[i].pos.y - Y_PADDING,
-				SPRITE_DIM, SPRITE_DIM,
-				enemies[i].pos.x,
-				enemies[i].pos.y
-			);
-				draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*6, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, enemies[i].pos.x, enemies[i].pos.y, 1);
-			}
-		}
 
 		if(draw_bg == 1 && started){
 			draw_tiles(screens[gs.current_screen], tile_num_x, tile_num_y, 0, y_padding);
@@ -955,7 +942,19 @@ int main(void) {
 		}
 		
 
-		if(draw_link == 1 && draw_sword != 1) {
+		if(draw_link == 1 && draw_sword != 1 || draw_enemies[0]) {
+
+			for(int i = 0; i < number_of_enemies;i++) {
+				update_background(
+				screens[gs.current_screen], TILES_H,
+				enemies[i].pos.x,
+				enemies[i].pos.y - Y_PADDING,
+				SPRITE_DIM, SPRITE_DIM,
+				enemies[i].pos.x,
+				enemies[i].pos.y
+			);
+			}
+
 			// Apdejtuj samo pozadinu oko Linka.
 			update_background(
 				screens[gs.current_screen], TILES_H,
@@ -978,6 +977,11 @@ int main(void) {
 				gs.link.pos.y,
 				1
 			);
+
+			for(int i = 0; i < number_of_enemies;i++) {
+				draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*6, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, enemies[i].pos.x, enemies[i].pos.y, 1);
+			}
+
 			draw_link = 0;
 		}
 
