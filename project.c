@@ -846,7 +846,7 @@ int main(void) {
 			collision_screen_enemy = screens[gs.current_screen];
 			if(init_enemies) {
 				init_enemies = 0;
-				int enemy_x = 0;
+				int enemy_x = 16;
 				int enemy_y = Y_PADDING;
 				int col1 = 0;
 				int col2 = 0;
@@ -854,11 +854,15 @@ int main(void) {
 					do
 					{
 						enemy_y += 16;
-						col1 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x + 2)/TILE_SIZE];
-						col2 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x - 2)/TILE_SIZE];
+						col1 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x)/TILE_SIZE];
+						col2 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x)/TILE_SIZE];
 						if(check_collision(col1, col2))
-						enemy_x += 16;
-						col2 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x - 2)/TILE_SIZE];
+						{	
+							enemy_x += 16;
+							col1 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x)/TILE_SIZE];
+						}
+						else 
+							break;
 					} while (check_collision(col1, col2));
 
 					enemies[i].pos.x = enemy_x;
@@ -890,13 +894,23 @@ int main(void) {
 						enemies[i].anim.orientation = UP;
 					}
 					else if (enemy_step_y[i] > 0 && alter_axis) {
-						col1 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + 2)/TILE_SIZE];
-						col2 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM - 2)/TILE_SIZE];
+						col1 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + 2)/TILE_SIZE];
+						col2 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM - 2)/TILE_SIZE];
 						enemies[i].anim.orientation = DOWN;
 					}
 
-					enemy_step_x[i] *= (rand_generator() % 53 ? 1 : -1);
-					enemy_step_y[i] *= (rand_generator() % 53 ? 1 : -1);
+					int collision = check_collision(col1, col2);
+
+					
+					if(!collision) {
+						enemies[i].pos.x += enemy_step_x[i] * (enemy_counter ? 0 : 1) * (!alter_axis);
+						enemies[i].pos.y += enemy_step_y[i] * (enemy_counter ? 0 : 1) * alter_axis;
+					}
+
+					if(enemy_counter) {
+						enemy_step_x[i] *= (rand_generator() % 53 ? 1 : -1);
+						enemy_step_y[i] *= (rand_generator() % 53 ? 1 : -1);
+					}
 					
 					
 					if(enemy_step_y[i] + enemies[i].pos.y < Y_PADDING){
@@ -915,12 +929,6 @@ int main(void) {
 						enemies[i].pos.x = title_screen__w - SPRITE_DIM;
 						enemy_step_x[i] = -ENEMY_STEP;
 					}
-
-					if(!check_collision(col1, col2)) {
-						enemies[i].pos.x += enemy_step_x[i] * (enemy_counter ? 0 : 1) * (!alter_axis);
-						enemies[i].pos.y += enemy_step_y[i] * (enemy_counter ? 0 : 1) * alter_axis;
-					}
-					
 
 					draw_enemies[i] = 1;
 				}
