@@ -86,6 +86,9 @@ typedef struct {
 #define VOID_BETWEEN_LINKS 8
 
 #define MAX_ENEMIES 3
+#define ENEMY_SPEED 3
+#define ENEMY_STEP 2
+
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
@@ -111,6 +114,8 @@ typedef enum {
 	RIGHT
 } link_orientation_t;
 
+
+
 typedef struct {
 	link_orientation_t orientation;
 	int orientation_state;
@@ -128,7 +133,7 @@ typedef struct {
 typedef struct {
 	point_t pos;
 	point_t old_pos;
-	link_orientation_t orientation;
+	link_anim_t anim;
 } enemy_t;
 
 
@@ -629,6 +634,11 @@ int main(void) {
 
 	int counter = 0;
 
+	// enemy anim step counter
+	int enemy_counter = 0;
+	int alter_axis_counter = 0;
+	int alter_axis = 0;
+
 	uint8_t last_link_draw = 0;//koristi se kao bool, da se samo jednom iscrta linkic posle pomeraja
 
 	uint8_t current_tileX = 0;
@@ -644,27 +654,40 @@ int main(void) {
 
 	uint8_t draw_enemies[MAX_ENEMIES];
 	uint8_t init_enemies = 1;
-	int enemy_step[MAX_ENEMIES];
-	for(int i = 0;i < MAX_ENEMIES;i++) {
+	int enemy_step_x[MAX_ENEMIES];
+	int enemy_step_y[MAX_ENEMIES];
+	for(int i = 0; i < MAX_ENEMIES;i++) {
 		draw_enemies[i] = 0;
-		enemy_step[i] = +5;
+		enemy_step_x[i] = ENEMY_STEP;
+		enemy_step_y[i] = ENEMY_STEP;
+		enemies[i].anim.orientation_state = 0;
 	}
 
 	uint32_t old_screen;
 
 	while(1){
-		counter++;//ovo je pisano nogicama
+		// animation counter
+		counter++;
 		if(counter == ANIM_DELAY)
 		{
-			gs.link.anim.orientation_state ^= 1;//ovo vise nije pisano nogicama
+			gs.link.anim.orientation_state ^= 1;
+			for(int i = 0; i < MAX_ENEMIES; i++) {
+				enemies[i].anim.orientation_state ^= 1;
+			}
 			counter = 0;
 		}
 		
-		/*
-			Za sada samo:
-			Crtkanje intro screen-a na ekran.
-			I kada korisnik pritisne s kao start, da se otvori neka mapa sa velike mape.
-		*/
+		// enemy step counter
+		enemy_counter++;
+		if(enemy_counter == ENEMY_SPEED) {
+			enemy_counter = 0;
+			alter_axis_counter++;
+			if(alter_axis_counter == 3*ENEMY_SPEED) {
+				alter_axis_counter = 0;
+				alter_axis ^= 1;
+			}
+		}
+			
 		
 		/////////////////////////////////////
 		// Poll controls.
@@ -797,7 +820,6 @@ int main(void) {
 				gs.link.pos.y += mov_y;
 			}
 
-			//printf("%d\n", number_of_enemies);
 
 			collision_screen_enemy = screens[gs.current_screen];
 			if((number_of_enemies) && (init_enemies)) {
@@ -815,7 +837,6 @@ int main(void) {
 					while(col1 != 2) {
 						enemy_x+=1;
 						col1 = collision_screen_enemy[((enemy_y + 0 - Y_PADDING)/TILE_SIZE)*TILES_H + (0+enemy_x)/TILE_SIZE];
-						//printf("col = %d\n", col1);
 						if(enemy_x >= title_screen__w - SPRITE_DIM - 1) {
 							enemy_x = 0;
 							enemy_y+=1;
@@ -823,8 +844,6 @@ int main(void) {
 					}
 					enemies[i].pos.x = enemy_x;
 					enemies[i].pos.y = enemy_y;
-					/*printf("x[%d] = %d\n", i, enemies[i].pos.x);
-					printf("y[%d] = %d\n", i, enemies[i].pos.y);*/
 					draw_enemies[i] = 1;
 					enemy_x = 16*8;
 					enemy_y = Y_PADDING + 16*4;
@@ -832,33 +851,68 @@ int main(void) {
 				}
 			}
 			else if(number_of_enemies) {
-				//printf("NEMA\n");
 				int col1 = 0;
 				int col2 = 0;
 				for(int i = 0; i < number_of_enemies;i++) {
 
-					if(enemy_step[i] > 0) {
-						col1 = collision_screen[((enemy_step[i] + enemies[i].pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (enemies[i].pos.x)/TILE_SIZE];
-						col2 = collision_screen[((enemy_step[i] + enemies[i].pos.y - Y_PADDING + SPRITE_DIM)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM)/TILE_SIZE];
+					if(enemy_step_x[i] < 0 && !alter_axis) {
+						col1 = collision_screen[(( enemies[i].pos.y - Y_PADDING + 2)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + enemy_step_x[i])/TILE_SIZE];
+						col2 = collision_screen[(( enemies[i].pos.y - Y_PADDING + SPRITE_DIM - 2)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + enemy_step_x[i])/TILE_SIZE];
+						enemies[i].anim.orientation = LEFT;
 					}
-					else {
-						col1 = collision_screen[((enemy_step[i] + enemies[i].pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x)/TILE_SIZE];
-						col2 = collision_screen[((enemy_step[i] + enemies[i].pos.y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM)/TILE_SIZE];
+					else if (enemy_step_x[i] > 0 && !alter_axis) {
+						col1 = collision_screen[((enemies[i].pos.y - Y_PADDING + 2)/TILE_SIZE)*TILES_H + (enemies[i].pos.x +  SPRITE_DIM + enemy_step_x[i])/TILE_SIZE];
+						col2 = collision_screen[((enemies[i].pos.y - Y_PADDING + SPRITE_DIM - 2)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM + enemy_step_x[i])/TILE_SIZE];
+						enemies[i].anim.orientation = RIGHT;
+					}
+					else if(enemy_step_y[i] < 0 && alter_axis) {
+						col1 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + 2)/TILE_SIZE];
+						col2 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM - 2)/TILE_SIZE];
+						enemies[i].anim.orientation = UP;
+					}
+					else if (enemy_step_y[i] > 0 && alter_axis) {
+						col1 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + 2)/TILE_SIZE];
+						col2 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM - 2)/TILE_SIZE];
+						enemies[i].anim.orientation = DOWN;
 					}
 					
-					if(enemy_step[i] + enemies[i].pos.y < Y_PADDING){
-						enemy_step[i] = +5;
-					}
-					else if (mov_y + gs.link.pos.y > title_screen__h - 9 - SPRITE_DIM) {
-						enemy_step[i] = -5;
-					}
-					else if(check_collision(col1, col2)) {
-						enemy_step[i] = enemy_step[i] * -1;
-						enemies[i].pos.y += enemy_step[i];
+					
+					if(enemies[i].pos.y - (int)gs.link.pos.y < 0 ) {
+						enemy_step_y[i] = + ENEMY_STEP;
+
 					}
 					else {
-						enemies[i].pos.y += enemy_step[i];
+						enemy_step_y[i] = - ENEMY_STEP;
 					}
+					if(enemies[i].pos.x - (int) gs.link.pos.x < 0 ) {
+						enemy_step_x[i] = + ENEMY_STEP;
+
+					}
+					else {
+						enemy_step_x[i] = - ENEMY_STEP;
+					}
+					
+					if(enemy_step_y[i] + enemies[i].pos.y < Y_PADDING){
+						enemies[i].pos.y = Y_PADDING;
+						enemy_step_y[i] = +ENEMY_STEP;
+					}
+					else if (enemy_step_y[i] + enemies[i].pos.y > title_screen__h - 9 - SPRITE_DIM) {
+						enemies[i].pos.y = title_screen__h - 9 - SPRITE_DIM;
+						enemy_step_y[i] = -ENEMY_STEP;
+					}
+					if(enemy_step_x[i] + (int)enemies[i].pos.x < 0){
+						enemies[i].pos.y = 0;
+						enemy_step_x[i] = +ENEMY_STEP;
+					}
+					else if (enemy_step_x[i] + enemies[i].pos.x > title_screen__w - SPRITE_DIM) {
+						enemies[i].pos.y = title_screen__w - SPRITE_DIM;
+						enemy_step_x[i] = -ENEMY_STEP;
+					}
+					if(!check_collision(col1, col2)) {
+						enemies[i].pos.x += enemy_step_x[i] * (enemy_counter ? 0 : 1) * (!alter_axis);
+						enemies[i].pos.y += enemy_step_y[i] * (enemy_counter ? 0 : 1) * alter_axis;
+					}
+					
 					draw_enemies[i] = 1;
 				}
 			}
@@ -909,7 +963,6 @@ int main(void) {
 			draw_link = 1;
 			gs.link.anim.orientation = DOWN;
 		}
-//ovde je bilo
 
 		if(draw_bg == 1 && started){
 			draw_tiles(screens[gs.current_screen], tile_num_x, tile_num_y, 0, y_padding);
@@ -979,7 +1032,7 @@ int main(void) {
 			);
 
 			for(int i = 0; i < number_of_enemies;i++) {
-				draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*6, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, enemies[i].pos.x, enemies[i].pos.y, 1);
+				draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, enemies[i].anim.orientation*SPRITE_DIM,FIRST_HUD_SIZE*6  + enemies[i].anim.orientation_state*SPRITE_DIM, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, enemies[i].pos.x, enemies[i].pos.y, 1);
 			}
 
 			draw_link = 0;
