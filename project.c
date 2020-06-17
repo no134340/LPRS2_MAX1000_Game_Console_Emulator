@@ -199,6 +199,7 @@ typedef struct {
 	int current_screen;
 	// linkić
 	link_t link;
+	int game_over;
 } game_state_t;
 
 
@@ -657,8 +658,6 @@ void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* 
 				break;
 			}
 			if(kill) {
-				printf("enemy %d is dead.", i);
-				fflush(stdout);
 				enemies[i].dead = kill;
 				draw_enemies[i] = 0;
 			}
@@ -671,13 +670,42 @@ void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* 
 				continue;
 			if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM)) {
 				gs->link.lives -= 1;
-				if(gs->link.lives < 0)
+				if(gs->link.lives < 0) {
 					gs->link.lives = 0;
+					gs->game_over = 1;
+					return;
+				}
 				update_lives(gs->link.lives);
 				*imunity = IMUNITY_TIME;
 			}
 		}
 	}
+}
+
+void game_over() {
+
+	WAIT_UNITL_0(gpu_p32[2]);
+	WAIT_UNITL_1(gpu_p32[2]);
+	for(uint16_t r1 = Y_PADDING; r1 < SCREEN_IDX4_H; r1++){
+			for(uint16_t c8 = 0; c8 < SCREEN_IDX4_W; c8++){
+				unpack_idx4_p32[r1*SCREEN_IDX4_W + c8] = 0x00000000;
+			}
+	}
+
+	printf("this woroks");
+	fflush(stdout);
+	font_indices text[] = {G, A, M, E, DASH, O, V, E, R, EXCL};
+	uint8_t lineX = 32;
+	uint8_t lineY = Y_PADDING + (title_screen__h - 9  - Y_PADDING) / 2;
+	for(int i = 0; i < 10; i++) {
+		lineX += 2*FIRST_HUD_SIZE;
+		draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 
+						FIRST_HUD_SIZE*2*(text[i] % 16), FIRST_HUD_SIZE*2*(text[i] >> 4), 
+						FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, lineX, 
+						lineY, 1);
+	}
+
+	while(1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -701,6 +729,7 @@ int main(void) {
 	// redovni screenovi su od 0-127
 	// -1 naznaka da se crta title screen
 	gs.current_screen = -1;
+	gs.game_over = 0;
 	int y_padding = 0;
 
 	gs.link.anim.orientation = LEFT;
@@ -762,6 +791,10 @@ int main(void) {
 
 	while(1){
 		// animation counter
+		if(gs.game_over) {
+			game_over();
+		}
+
 		if(imunity_cnt > 0)
 		{
 			imunity_cnt--;
