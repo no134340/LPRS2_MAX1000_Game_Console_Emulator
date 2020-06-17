@@ -16,22 +16,15 @@
 #define WAIT_UNITL_0(x) while(x != 0){}
 #define WAIT_UNITL_1(x) while(x != 1){}
 
-#define SCREEN_IDX1_W 640
-#define SCREEN_IDX1_H 480
 #define SCREEN_IDX4_W 320
 #define SCREEN_IDX4_H 240
-#define SCREEN_RGB333_W 160
-#define SCREEN_RGB333_H 120
 
 #define SCREEN_IDX4_W8 (SCREEN_IDX4_W/8)
 
 #define gpu_p32 ((volatile uint32_t*)LPRS2_GPU_BASE)
 #define palette_p32 ((volatile uint32_t*)(LPRS2_GPU_BASE+0x1000))
-#define unpack_idx1_p32 ((volatile uint32_t*)(LPRS2_GPU_BASE+0x400000))
-#define pack_idx1_p32 ((volatile uint32_t*)(LPRS2_GPU_BASE+0x600000))
 #define unpack_idx4_p32 ((volatile uint32_t*)(LPRS2_GPU_BASE+0x800000))
 #define pack_idx4_p32 ((volatile uint32_t*)(LPRS2_GPU_BASE+0xa00000))
-#define unpack_rgb333_p32 ((volatile uint32_t*)(LPRS2_GPU_BASE+0xc00000))
 #define joypad_p32 ((volatile uint32_t*)LPRS2_JOYPAD_BASE)
 
 typedef struct {
@@ -46,36 +39,25 @@ typedef struct {
 } bf_joypad;
 #define joypad (*((volatile bf_joypad*)LPRS2_JOYPAD_BASE))
 
-typedef struct {
-	uint32_t m[SCREEN_IDX1_H][SCREEN_IDX1_W];
-} bf_unpack_idx1;
-#define unpack_idx1 (*((volatile bf_unpack_idx1*)unpack_idx1_p32))
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game config.
-#define Y_PADDING 56 // number of blank rows (treba nam crno iznad ekrana za HUD)
+
+#define Y_PADDING 56 // number of blank rows (black padding for  HUD)
 
 #define FIRST_HUD_PADDING 88 //16+64+8
-#define FIRST_HUD_SIZE 8
+#define FIRST_HUD_SIZE 8 // size of the small HUD sprites
 
-#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 24px apart (ja sam tako nacrtala u gimp-u da bude lakše da odsecamo linkića iz sheet-a, oni bez mača)
-#define SPRITE_DIM 16 // sprites are 16x16px (oni mali bez mača. oni s mačem su 32px)
-						   // nismo toliko uznapredovali u razvoju igrice da pišem i konstante za taj poslednji red gde su linkići s mačem
-						   // ukratko 16px link + 8px prazno + 32px link + 8px prazno + 16px link + 8px prazno + 32px link
-					  // i tile-ove imaju dimenzije 16x16
+#define LINK_ORIENATION_OFFSET 24 // every link sprite in the sheet is 24px apart 
+#define SPRITE_DIM 16 // sprites are 16x16px (the little ones without sword, the links with sword are either 16x32 or 32x16)
 
 #define ANIM_DELAY 10
 
 #define TILES_H 16 // broj tile-ova koji staje u svaki red
-
 #define TILES_V 10 // broj tile-ova koji staje u svaku vrstu
-
 #define TILE_SIZE 16
 
 #define OVERWORLD_MAPS_H 16
-
 #define OVERWORLD_MAPS_V 8
 
 #define Y_DIAMOND 6
@@ -89,7 +71,7 @@ typedef struct {
 #define ENEMY_SPEED 3
 #define ENEMY_STEP 2
 
-#define IMUNITY_TIME 50
+#define IMUNITY_TIME 200
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
@@ -101,14 +83,13 @@ typedef struct {
 } point_t;
 
 
-// Orijentacije linka redom kako su na sprite sheet-u
-// Svaka orijentacija ima 2 sprajta
-// Ovako možemo indeksirati gornji levi ugao svakog od sprajtova na sledeći način:
+// Link orientations
+// Every orientation has 2 spirtes
+// Indexing of the upper left corner of every sprite:
 // LEFT 0:
 // link_sheet__p[(0*LINK_ORIENTATION_OFFSET)*link_sheet__w +  LEFT*LINK_ORIENATION_OFFSET]
 // UP 1:
 // link_sheet__p[(1*LINK_ORIENTATION_OFFSET)*link_sheet__w +  UP*LINK_ORIENATION_OFFSET]
-// nije kao da ćemo ovako indeksirati, ali da znate kako su raspoređeni
 typedef enum {
 	DOWN,
 	LEFT,
@@ -141,16 +122,15 @@ typedef struct {
 
 
 
-// pokazivači na svaki od delova mapa
-// ovo su sada matrice sa indeksima tile-ova!
+// pointers to tile look-up tables
 // 2D INDEKSI SCREEN-OVA:
 // A1 - (0, 0), B1 - (0, 1) ITD.
-// 1D INDEKS ZA SCREEN SA 2D INDEKSOM (i, j):
+// 1D index of the point with  2D index (i, j):
 // j*16 + i
-// 16 zato sto ima 16 screenova u jednom redu, redova ima 8
-// (ima 16*8 = 128 screenova ukupno)
-// + jedan title screen
-// ovo koristimo kada prosleđujemo funkciji za crtkanje tile-ova šta da crta
+// because there is total 16 in a row
+// (16*8 = 128 screens total)
+// + title screen
+// for the backround drawing and updating
 uint8_t* screens[] = 
 {
 	A1__p, B1__p, C1__p, D1__p, E1__p, F1__p, G1__p, H1__p, I1__p, J1__p, K1__p, L1__p, M1__p, N1__p, O1__p, P1__p,
@@ -163,7 +143,7 @@ uint8_t* screens[] =
 	A8__p, B8__p, C8__p, D8__p, E8__p, F8__p, G8__p, H8__p, I8__p, J8__p, K8__p, L8__p, M8__p, N8__p, O8__p, P8__p,
 };
 
-// gde ima koliko enemy-ja
+// how many enemies a map
 uint8_t enemies_array[] = 
 {
 	1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -176,28 +156,21 @@ uint8_t enemies_array[] =
 	1, 2, 0, 0, 0, 1, 2, 0, 1, 1, 1, 1, 0, 0, 0, 0,
 };
 
-// pokazivači na palete
-// Intro screen i redovni screenovi sa mape i link imaju zajedno
-// 17 boja. Tužno. Zato smo razdvojili posebnu paletu za intro screen
-// i mapu i linka. Zašto ovo postoji kad nije potrebno, ne znam. 
+// pointers to palettes. 
 uint32_t* screen_palettes[] = 
 {
-	// izgleda da je moja izmena u img_to_src.py skripti pokupila ime poslednje slike pa je po
-	// njoj nadenula ime paleti. it's not a bug it's a feature
 	palette_title_screen, palette_tiles
 };
 
-
+// indices of walkable tiles
 uint8_t walkable_tiles[26] = {0, 2, 6, 12, 14, 18, 22, 24, 28, 30, 34, 3*18 + 4, 3*18 + 10, 3*18 + 16, 4*18 + 4, 4*18 + 10, 4*18 + 16, 5*18 + 4, 5*18 + 10, 5*18+16, 6*18 + 4, 6*18 + 10, 6*18+16, 7*18 + 5, 7*18 + 11, 7*18+17};
 
 
-// kojim redom ide koji karakter u tile sheet-u za slova
+// order of the characters in the sprite sheet for characters
 typedef enum {ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, COMMA, EXCL, APO, AND, PERIOD, QUOTE, QMARK, DASH} font_indices;
 
 typedef struct {
-	// trenutno prikazani deo mape / ekran
 	int current_screen;
-	// linkić
 	link_t link;
 	int game_over;
 } game_state_t;
@@ -243,15 +216,17 @@ static void draw_sprite_from_atlas(
 				(dst_y+y)*SCREEN_IDX4_W +
 				(dst_x+8*x8);
 			uint32_t pixel = sprite_atlas[src_idx];
+			// extracting pixels. 
+			// each pixels takes up 4bits, that is, there is 8 pixels in a 32-byte word
 			for(uint8_t i = 0; i < 8; i++) {
-				// provera svakog piksela da li je crn (tj. da li je index 0)
 				cnt++;
 				if(cnt > w) {
 					break;
 				}
 				uint32_t px = (pixel>>(4*i))&0b1111;
-				// ako jeste, ne crtaj ga!! (samo ako je sprajt. ako je pozadina,
-				// onda je to deo pozadine i treba crtati taj crni piksel)
+				// check every pixel if it's black
+				// if it is and we're drawing a sprite, don't draw it
+				// if it is and we're not drawing a sprite, draw it
 				if(px == 0 && sprite == 1) {
 					continue;
 				}
@@ -264,8 +239,8 @@ static void draw_sprite_from_atlas(
 
 static void draw_tiles(
 	uint8_t* src_p,
-	uint16_t src_w, // broj tile-ova horizontalno
-	uint16_t src_h, // broj tile-ova vertikalno
+	uint16_t src_w, // number of tiles horizontally
+	uint16_t src_h, // number of tiles vertically
 	uint16_t dst_x,
 	uint16_t dst_y
 ) {
@@ -275,12 +250,8 @@ static void draw_tiles(
 		for(uint16_t x = 0; x < 16; x++){
 			uint8_t ind = src_p[y*SPRITE_DIM + x];
 			/*
-				U python skripti za pravljenje indeksa tile-ova
-				stavila sam da stavi kao indeks 144 ukoliko tile
-				nije pronađen u tile-sheetu..... Ovo bi trebalo
-				rešiti nekako kasnije (najbolje ručno dodati tile-ove u sheet,
-				python skripta će bez problema odraditi ponovo posao sa 
-				dodatim tile-ovima). Za sada uzme onaj skroz crni tile.
+				Tiles not recognized by the find_tile.py script are labeled with index 150.
+				A bug to be fixed by the future generations.
 			*/
 			if(ind == 150) {
 				ind = 22;
@@ -306,12 +277,6 @@ static void update_background (
 	uint16_t dst_x,
 	uint16_t dst_y
 ) {
-	// indeksi u matrici sa tile-ovima moraju biti deljivi sa veličinom tile-a (da bi smo uzeli ceo tile)
-	/*
-		Ako ovo nije slušaj, naš link će preklopiti makar 9 tile-a u najgorem slučaju,
-		pa moramo iscrtati svih 9
-	*/
-
 	uint16_t rem_x = src_x % SPRITE_DIM;
 	uint16_t rem_y = src_y % SPRITE_DIM;
 	
@@ -340,9 +305,11 @@ static void update_background (
 	}
 }
 
+
 void draw_HUD_number(uint16_t x,uint16_t location, uint16_t height) {
 	draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 2 * x * FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, 0 + FIRST_HUD_PADDING + 2*FIRST_HUD_SIZE-3 +location*FIRST_HUD_SIZE, height, 1);
 }
+
 
 void number_generator(uint16_t x,uint16_t height) {
 	if( x / 10 != 0) {
@@ -353,7 +320,6 @@ void number_generator(uint16_t x,uint16_t height) {
 		draw_HUD_number(x, 0, height);
 	}
 }
-
 
 
 void init_HUD() {
@@ -371,7 +337,6 @@ void init_HUD() {
 
 
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE, 0, FIRST_HUD_SIZE*2+8, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*4, FIRST_HUD_SIZE*2, 1);//b
-	//ovo neka ostane, trebace za kasnije kada se uvede intro kada udje u pecinu i pokupi mac.
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*4+4, 0, FIRST_HUD_SIZE*2+8, FIRST_HUD_SIZE*4-1, FIRST_HUD_PADDING + FIRST_HUD_SIZE*7, FIRST_HUD_SIZE*2, 1);
 
 
@@ -393,6 +358,8 @@ void init_HUD() {
 	}
 	
 }
+
+
 void draw_HUD_sword() {
 	draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, 0,FIRST_HUD_SIZE*4-1, FIRST_HUD_SIZE, FIRST_HUD_SIZE*2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*5, FIRST_HUD_SIZE*3+1, 1);
 }
@@ -418,7 +385,7 @@ void update_minimap(uint32_t old_screen, uint32_t current_screen) {
 }
 
 
-// ovo je za crtanje title intro screen-a
+// for intro screen drawing.
 static void draw_background(
 	uint32_t* src_p,
 	uint16_t src_w,
@@ -455,9 +422,12 @@ int check_collision(uint8_t curr_x, uint8_t curr_y) {
 	}
 	return 1;
 }
+
+
 void cave_update_background(int x, int y, int delete) {
 	draw_sprite_from_atlas(dungeon__p, dungeon__w, x, y - Y_PADDING, SPRITE_DIM, delete, x, y, 0);
 }
+
 
 void cave_animation(game_state_t gs) {
 	int tune_anim = 100000;
@@ -596,6 +566,8 @@ void cave_animation(game_state_t gs) {
 }
 
 
+// a not that efficient but useful enough pseudo-random number generator.
+// good enough to make the enemies dumb and not kill link within 0.0001 sec
 unsigned short lfsr = 0xACE1u;
 unsigned rand_generator()
 {
@@ -603,6 +575,8 @@ unsigned rand_generator()
 	bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
 	return lfsr =  (lfsr >> 1) | (bit << 15);
 }
+
+
 
 void update_lives(int lives) {
 	uint8_t whole;
@@ -630,6 +604,8 @@ void update_lives(int lives) {
 	}
 }
 
+
+
 void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* imunity, uint8_t* draw_enemies) {
 	if(draw_sword) {
 		for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
@@ -639,19 +615,19 @@ void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* 
 			switch (gs->link.anim.orientation)
 			{
 			case RIGHT:
-				if((gs->link.pos.x + SPRITE_DIM > enemies[i].pos.x && gs->link.pos.x + SPRITE_DIM < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM))
+				if((gs->link.pos.x + 2*SPRITE_DIM >= enemies[i].pos.x) /*&& gs->link.pos.x + SPRITE_DIM <= enemies[i].pos.x + SPRITE_DIM)*/ && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM))
 					kill = 1;
 				break;
 			case DOWN:
-				if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y + SPRITE_DIM > enemies[i].pos.y && gs->link.pos.y + SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
+				if((gs->link.pos.x + SPRITE_DIM >= enemies[i].pos.x) && (gs->link.pos.y + 2*SPRITE_DIM >= enemies[i].pos.y && gs->link.pos.y + SPRITE_DIM*3 <= enemies[i].pos.y + 2*SPRITE_DIM+5))
 					kill = 1;
 				break;
 			case LEFT:
-			if((gs->link.pos.x - SPRITE_DIM < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y + SPRITE_DIM > enemies[i].pos.y && gs->link.pos.y + SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
+			if((gs->link.pos.x - SPRITE_DIM > enemies[i].pos.x && gs->link.pos.x - SPRITE_DIM < enemies[i].pos.x + SPRITE_DIM ) && (gs->link.pos.y + SPRITE_DIM > enemies[i].pos.y && gs->link.pos.y + SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
 					kill = 1;
 				break;
 			case UP:
-				if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y - SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
+				if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y + SPRITE_DIM > enemies[i].pos.y && gs->link.pos.y - SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
 					kill = 1;
 				break;
 			default:
@@ -664,13 +640,14 @@ void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* 
 		}
 	}
 	else if (*imunity == 0){
-	// !draw_sword
 		for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
 			if(enemies[i].dead)
 				continue;
-			if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM)) {
+			if((gs->link.pos.x >= enemies[i].pos.x && gs->link.pos.x <= enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y >= enemies[i].pos.y && gs->link.pos.y <= enemies[i].pos.y + SPRITE_DIM) 
+			|| (gs->link.pos.x + SPRITE_DIM >= enemies[i].pos.x && gs->link.pos.x + SPRITE_DIM <= enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y >= enemies[i].pos.y && gs->link.pos.y <= enemies[i].pos.y + SPRITE_DIM) ) {
 				gs->link.lives -= 1;
-				if(gs->link.lives < 0) {
+				if(gs->link.lives <= 0) {
+					update_lives(gs->link.lives);
 					gs->link.lives = 0;
 					gs->game_over = 1;
 					return;
@@ -683,7 +660,6 @@ void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* 
 }
 
 void game_over() {
-
 	WAIT_UNITL_0(gpu_p32[2]);
 	WAIT_UNITL_1(gpu_p32[2]);
 	for(uint16_t r1 = Y_PADDING; r1 < SCREEN_IDX4_H; r1++){
@@ -725,9 +701,8 @@ int main(void) {
 
 	// Game state.
 	game_state_t gs;
-	enemy_t enemies[MAX_ENEMIES];//max broj protivnika moguc na bilo kojoj mapi
-	// redovni screenovi su od 0-127
-	// -1 naznaka da se crta title screen
+
+
 	gs.current_screen = -1;
 	gs.game_over = 0;
 	int y_padding = 0;
@@ -739,41 +714,27 @@ int main(void) {
 	gs.link.pos.y = Y_PADDING + 2 + 64;
 	gs.link.old_pos.x = gs.link.pos.x;
 	gs.link.old_pos.y = gs.link.pos.y;
-	gs.link.lives = 3*2; // srce moze biti na pola, 3 srca po pola
-	volatile int draw_link = 0;
-	volatile int draw_bg = 1;
+	gs.link.lives = 3*2; // 3 hearts * 2 halves of hearts
+	int draw_link = 0;
+	int draw_bg = 1;
 	int started = 0;
 	int draw_HUD = 0;
 	int anim_done = 0;
 
-	volatile int draw_sword = 0;
-	int refresh_sword = 0; // da li smo prethodno bili nacrtali sword a sada moramo da update pozadinu za njega?
-	int linkic_x=0;
-	int size_y=0;
-	int size_x=0;
-	// spreci linkica da se crta po title-screen-u
+	int draw_sword = 0;
+	int refresh_sword = 0; // should we update the background after link has drawn the sword?
+	int linkic_x = 0;
+	int size_y = 0;
+	int size_x = 0;
+	
 
 	int counter = 0;
 
-	// enemy anim step counter
-	int enemy_counter = 0;
-	int alter_axis_counter = 0;
-	int alter_axis = 0;
 
-	uint8_t last_link_draw = 0;//koristi se kao bool, da se samo jednom iscrta linkic posle pomeraja
-
-	uint8_t current_tileX = 0;
-	uint8_t current_tileY = 0;
-	uint8_t* collision_screen;
-	uint8_t* collision_screen_enemy;
-
-	uint8_t number_of_enemies = 0;
-
-	int has_sword = 0;
-	int in_cave = 0;
-	int delay_cave = 0;
-
-	uint8_t draw_enemies[MAX_ENEMIES];
+	
+	// Enemy stuff
+	enemy_t enemies[MAX_ENEMIES];
+		uint8_t draw_enemies[MAX_ENEMIES];
 	uint8_t init_enemies = 1;
 	int enemy_step_x[MAX_ENEMIES];
 	int enemy_step_y[MAX_ENEMIES];
@@ -784,6 +745,25 @@ int main(void) {
 		enemies[i].anim.orientation_state = 0;
 		enemies[i].dead = 0;
 	}
+	uint8_t number_of_enemies = 0;
+
+	// enemy anim step counter
+	int enemy_counter = 0;
+	int alter_axis_counter = 0;
+	int alter_axis = 0;
+
+
+	// a bunch of helper variables
+	uint8_t last_link_draw = 0;
+
+	uint8_t current_tileX = 0;
+	uint8_t current_tileY = 0;
+	uint8_t* collision_screen;
+	uint8_t* collision_screen_enemy;
+
+	int has_sword = 0;
+	int in_cave = 0;
+	int delay_cave = 0;
 
 	uint32_t old_screen;
 
@@ -829,12 +809,10 @@ int main(void) {
 		int mov_y = 0;
 	
 		if(joypad.start && !started) {
-			// neće sa start screena prelaziti na ovaj deo mape, ovo je samo test
 			gs.current_screen = 7*OVERWORLD_MAPS_H + 7;
 			old_screen = gs.current_screen;
 			y_padding = Y_PADDING;
 			draw_link = 1;
-			// prebaci se na paletu za ekrane i linka
 			for(uint8_t i = 0; i < 16; i++){
 				palette_p32[i] = palette_tiles[i];
 			}
@@ -845,12 +823,9 @@ int main(void) {
 		/////////////////////////////////////
 		// Gameplay.
 		
-		// Da ne prođe kroz ivice ekrana
-		// Link lepo šeta po svim osama sada.
-		
 
 		if(started) {
-			collision_screen = screens[gs.current_screen];//treba mi nogice slomiti
+			collision_screen = screens[gs.current_screen];
 			number_of_enemies = enemies_array[gs.current_screen];
 			if(joypad.left) {
 				mov_x = -1;
@@ -860,7 +835,7 @@ int main(void) {
 				current_tileY = collision_screen[((gs.link.pos.y - Y_PADDING + SPRITE_DIM-2)/TILE_SIZE)*TILES_H + (gs.link.pos.x+mov_x)/TILE_SIZE];
 				last_link_draw = 1;
 			}
-			else if(joypad.right) {//razmisljam da pomerim y na sredinu kad se menja x? sta mislite nenogaci moji
+			else if(joypad.right) {
 				mov_x = +1;
 				draw_link = 1;
 				gs.link.anim.orientation = RIGHT;
@@ -894,7 +869,7 @@ int main(void) {
 				else {
 					gs.link.anim.orientation_state = 1;
 				}
-				if(last_link_draw) {//samo jednom ulazi ovde dok se ne pomeri ponovo
+				if(last_link_draw) {
 					draw_link = 1;
 					last_link_draw = 0;
 				}
@@ -911,7 +886,7 @@ int main(void) {
 				delay_cave = 0;
 			}
 
-			// prelaz s mape na mapu levo-desno
+			// map transitions left-right
 			if(mov_x + gs.link.pos.x < 0) {
 				old_screen = gs.current_screen;
 				gs.current_screen--;
@@ -945,7 +920,7 @@ int main(void) {
 			}
 
 			
-			// prelaz s mape na mapu gore-dole
+			// map transition up-down
 			if(mov_y + gs.link.pos.y < Y_PADDING){
 				old_screen = gs.current_screen;
 				gs.current_screen -= OVERWORLD_MAPS_H;
@@ -968,6 +943,7 @@ int main(void) {
 			}
 
 
+			// do the enemy stuff
 			collision_screen_enemy = screens[gs.current_screen];
 			if(init_enemies) {
 				init_enemies = 0;
@@ -1031,6 +1007,7 @@ int main(void) {
 						enemies[i].pos.x += enemy_step_x[i] * (enemy_counter ? 0 : 1) * (!alter_axis);
 						enemies[i].pos.y += enemy_step_y[i] * (enemy_counter ? 0 : 1) * alter_axis;
 					}
+
 
 					if(enemy_counter) {
 						enemy_step_x[i] *= (rand_generator() % 53 ? 1 : -1);
@@ -1100,7 +1077,7 @@ int main(void) {
 		if(in_cave == 1 && !anim_done && gs.current_screen == 7*OVERWORLD_MAPS_H + 7) {
 			cave_animation(gs);
 			gs.link.pos.x = 65;
-			gs.link.pos.y = Y_PADDING+36;//35
+			gs.link.pos.y = Y_PADDING+36;
 			in_cave = 2;
 			draw_bg = 1;
 			draw_link = 1;
@@ -1156,7 +1133,6 @@ int main(void) {
 			
 
 		if(draw_link == 1 && draw_sword != 1) {
-			// Apdejtuj samo pozadinu oko Linka.
 			update_background(
 				screens[gs.current_screen], TILES_H,
 				gs.link.old_pos.x,
