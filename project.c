@@ -519,13 +519,13 @@ void cave_animation(game_state_t gs) {
 				loshmee_orientation ^= 1;
 				cave_update_background(loshmeeX, loshmeeY, 32);
 				draw_sprite_from_atlas(
-				loshmee__p, loshmee__w,
-				SPRITE_DIM*loshmee_orientation,
-				0,
-				SPRITE_DIM, SPRITE_DIM*2,
-				loshmeeX,
-				loshmeeY,
-				1
+					loshmee__p, loshmee__w,
+					SPRITE_DIM*loshmee_orientation,
+					0,
+					SPRITE_DIM, SPRITE_DIM*2,
+					loshmeeX,
+					loshmeeY,
+					1
 				);
 				if((text[k] != DASH) && (text[k] != AND)) {
 					draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 
@@ -550,13 +550,13 @@ void cave_animation(game_state_t gs) {
 				gs.link.pos.y -= 5;
 				gs.link.anim.orientation_state ^= 1;
 				draw_sprite_from_atlas(
-				link_sheet__p, link_sheet__w,
-				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
-				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
-				SPRITE_DIM, SPRITE_DIM,
-				gs.link.pos.x,
-				gs.link.pos.y,
-				1
+					link_sheet__p, link_sheet__w,
+					gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+					gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+					SPRITE_DIM, SPRITE_DIM,
+					gs.link.pos.x,
+					gs.link.pos.y,
+					1
 				);
 			}
 			else if(animation_state == 2) {
@@ -569,13 +569,13 @@ void cave_animation(game_state_t gs) {
 				gs.link.anim.orientation_state ^= 1;
 				gs.link.pos.y += 5;
 				draw_sprite_from_atlas(
-				link_sheet__p, link_sheet__w,
-				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
-				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
-				SPRITE_DIM, SPRITE_DIM,
-				gs.link.pos.x,
-				gs.link.pos.y-1,
-				1
+					link_sheet__p, link_sheet__w,
+					gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+					gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+					SPRITE_DIM, SPRITE_DIM,
+					gs.link.pos.x,
+					gs.link.pos.y-1,
+					1
 				);
 			}
 			else if(animation_state == 3) {
@@ -589,6 +589,14 @@ void cave_animation(game_state_t gs) {
 	}
 }
 
+
+unsigned short lfsr = 0xACE1u;
+unsigned rand_generator()
+{
+	unsigned bit;
+	bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ) & 1;
+	return lfsr =  (lfsr >> 1) | (bit << 15);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
@@ -784,14 +792,28 @@ int main(void) {
 				gs.current_screen--;
 				gs.link.pos.x = title_screen__w - SPRITE_DIM;
 				draw_bg = 1;
-				init_enemies = 1;
+				number_of_enemies = enemies_array[gs.current_screen];
+				if(number_of_enemies)
+					init_enemies = 1;
+				else {
+					for (int i = 0; i<MAX_ENEMIES;i++) {
+						draw_enemies[i] = 0;
+				}
+			}
 			}
 			else if (mov_x + gs.link.pos.x >= title_screen__w - SPRITE_DIM) {
 				old_screen = gs.current_screen;
 				gs.current_screen++;
 				gs.link.pos.x = 0;
 				draw_bg = 1;
-				init_enemies = 1;
+				number_of_enemies = enemies_array[gs.current_screen];
+				if(number_of_enemies)
+					init_enemies = 1;
+				else {
+					for (int i = 0; i<MAX_ENEMIES;i++) {
+						draw_enemies[i] = 0;
+				}
+			}
 			}
 			else if(!check_collision(current_tileX, current_tileY)) {
 				gs.link.pos.x += mov_x;
@@ -822,38 +844,35 @@ int main(void) {
 
 
 			collision_screen_enemy = screens[gs.current_screen];
-			if((number_of_enemies) && (init_enemies)) {
-				for(int i = 0; i < number_of_enemies;i++) {
-					enemies[i].pos.x = 0;
-					enemies[i].pos.y = 0;
-				}
+			if(init_enemies) {
 				init_enemies = 0;
 				int enemy_x = 0;
 				int enemy_y = Y_PADDING;
 				int col1 = 0;
 				int col2 = 0;
 				for(int i = 0; i < number_of_enemies;i++) {
-					col1 = 0;
-					while(col1 != 2) {
-						enemy_x+=1;
-						col1 = collision_screen_enemy[((enemy_y + 0 - Y_PADDING)/TILE_SIZE)*TILES_H + (0+enemy_x)/TILE_SIZE];
-						if(enemy_x >= title_screen__w - SPRITE_DIM - 1) {
-							enemy_x = 0;
-							enemy_y+=1;
-						}
-					}
+					do
+					{
+						enemy_y += 16;
+						col1 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x + 2)/TILE_SIZE];
+						col2 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x - 2)/TILE_SIZE];
+						if(check_collision(col1, col2))
+						enemy_x += 16;
+						col2 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x - 2)/TILE_SIZE];
+					} while (check_collision(col1, col2));
+
 					enemies[i].pos.x = enemy_x;
 					enemies[i].pos.y = enemy_y;
 					draw_enemies[i] = 1;
-					enemy_x = 16*8;
-					enemy_y = Y_PADDING + 16*4;
+					enemy_x += 16;
+					enemy_y += 16;
 					
 				}
 			}
-			else if(number_of_enemies) {
+			if(enemies_array[gs.current_screen]) {
 				int col1 = 0;
 				int col2 = 0;
-				for(int i = 0; i < number_of_enemies;i++) {
+				for(int i = 0; i < number_of_enemies; i++) {
 
 					if(enemy_step_x[i] < 0 && !alter_axis) {
 						col1 = collision_screen[(( enemies[i].pos.y - Y_PADDING + 2)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + enemy_step_x[i])/TILE_SIZE];
@@ -875,22 +894,10 @@ int main(void) {
 						col2 = collision_screen[((enemies[i].pos.y + enemy_step_y[i] - Y_PADDING)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + SPRITE_DIM - 2)/TILE_SIZE];
 						enemies[i].anim.orientation = DOWN;
 					}
-					
-					
-					if(enemies[i].pos.y - (int)gs.link.pos.y < 0 ) {
-						enemy_step_y[i] = + ENEMY_STEP;
 
-					}
-					else {
-						enemy_step_y[i] = - ENEMY_STEP;
-					}
-					if(enemies[i].pos.x - (int) gs.link.pos.x < 0 ) {
-						enemy_step_x[i] = + ENEMY_STEP;
-
-					}
-					else {
-						enemy_step_x[i] = - ENEMY_STEP;
-					}
+					enemy_step_x[i] *= (rand_generator() % 53 ? 1 : -1);
+					enemy_step_y[i] *= (rand_generator() % 53 ? 1 : -1);
+					
 					
 					if(enemy_step_y[i] + enemies[i].pos.y < Y_PADDING){
 						enemies[i].pos.y = Y_PADDING;
@@ -901,18 +908,20 @@ int main(void) {
 						enemy_step_y[i] = -ENEMY_STEP;
 					}
 					if(enemy_step_x[i] + (int)enemies[i].pos.x < 0){
-						enemies[i].pos.y = 0;
+						enemies[i].pos.x = 0;
 						enemy_step_x[i] = +ENEMY_STEP;
 					}
 					else if (enemy_step_x[i] + enemies[i].pos.x > title_screen__w - SPRITE_DIM) {
-						enemies[i].pos.y = title_screen__w - SPRITE_DIM;
+						enemies[i].pos.x = title_screen__w - SPRITE_DIM;
 						enemy_step_x[i] = -ENEMY_STEP;
 					}
+
 					if(!check_collision(col1, col2)) {
 						enemies[i].pos.x += enemy_step_x[i] * (enemy_counter ? 0 : 1) * (!alter_axis);
 						enemies[i].pos.y += enemy_step_y[i] * (enemy_counter ? 0 : 1) * alter_axis;
 					}
 					
+
 					draw_enemies[i] = 1;
 				}
 			}
@@ -993,21 +1002,25 @@ int main(void) {
 
 			refresh_sword = 0;
 		}
+
 		
-
-		if(draw_link == 1 && draw_sword != 1 || draw_enemies[0]) {
-
-			for(int i = 0; i < number_of_enemies;i++) {
+		
+		for(int i = 0; i < number_of_enemies;i++) {
+			if(!enemy_counter && draw_enemies[i])
 				update_background(
-				screens[gs.current_screen], TILES_H,
-				enemies[i].pos.x,
-				enemies[i].pos.y - Y_PADDING,
-				SPRITE_DIM, SPRITE_DIM,
-				enemies[i].pos.x,
-				enemies[i].pos.y
-			);
-			}
+					screens[gs.current_screen], TILES_H,
+					enemies[i].pos.x,
+					enemies[i].pos.y - Y_PADDING,
+					SPRITE_DIM, SPRITE_DIM,
+					enemies[i].pos.x,
+					enemies[i].pos.y
+				);
+			
+		}
 
+			
+
+		if(draw_link == 1 && draw_sword != 1) {
 			// Apdejtuj samo pozadinu oko Linka.
 			update_background(
 				screens[gs.current_screen], TILES_H,
@@ -1031,12 +1044,21 @@ int main(void) {
 				1
 			);
 
-			for(int i = 0; i < number_of_enemies;i++) {
-				draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, enemies[i].anim.orientation*SPRITE_DIM,FIRST_HUD_SIZE*6  + enemies[i].anim.orientation_state*SPRITE_DIM, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, enemies[i].pos.x, enemies[i].pos.y, 1);
-			}
-
-			draw_link = 0;
 		}
+
+		if(!enemy_counter && draw_sword != 1 && started)
+		{
+			draw_sprite_from_atlas(
+				link_sheet__p, link_sheet__w,
+				gs.link.anim.orientation*LINK_ORIENATION_OFFSET,
+				gs.link.anim.orientation_state*LINK_ORIENATION_OFFSET,
+				SPRITE_DIM, SPRITE_DIM,
+				gs.link.pos.x,
+				gs.link.pos.y,
+				1
+			);
+		}
+
 
 		if(draw_sword == 1) {
 
@@ -1106,9 +1128,18 @@ int main(void) {
 				pos_y,
 				1
 			);
-			draw_sword = 0;
+			
 			refresh_sword = 1;
 		}
+
+
+		
+		for(int i = 0; i < number_of_enemies;i++) {
+			if(draw_enemies[i] && (!enemy_counter || draw_link || refresh_sword))
+				draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, enemies[i].anim.orientation*SPRITE_DIM,FIRST_HUD_SIZE*6  + enemies[i].anim.orientation_state*SPRITE_DIM, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, enemies[i].pos.x, enemies[i].pos.y, 1);
+		}
+		draw_link = 0;
+		draw_sword = 0;
 
 	}
 
