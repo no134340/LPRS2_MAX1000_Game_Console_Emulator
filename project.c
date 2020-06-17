@@ -692,8 +692,6 @@ void game_over() {
 			}
 	}
 
-	printf("this woroks");
-	fflush(stdout);
 	font_indices text[] = {G, A, M, E, DASH, O, V, E, R, EXCL};
 	uint8_t lineX = 32;
 	uint8_t lineY = Y_PADDING + (title_screen__h - 9  - Y_PADDING) / 2;
