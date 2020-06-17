@@ -31,6 +31,7 @@ def prerequisites(ctx):
 	
 	if sys.platform.startswith('linux'):
 		# Ubuntu.
+		ctx.exec_command2('apt-get -y install python-pil')
 		ctx.exec_command2('apt-get -y install python3-pil')
 	elif sys.platform == 'win32' and os.name == 'nt' and os.path.sep == '/':
 		# MSYS2 Windows /mingw32/bin/python.
