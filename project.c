@@ -89,6 +89,8 @@ typedef struct {
 #define ENEMY_SPEED 3
 #define ENEMY_STEP 2
 
+#define IMUNITY_TIME 50
+
 ///////////////////////////////////////////////////////////////////////////////
 // Game data structures.
 
@@ -127,7 +129,7 @@ typedef struct {
 	point_t pos;
 	link_anim_t anim;
 	point_t old_pos;
-	uint8_t lives;
+	int lives;
 } link_t;
 
 typedef struct {
@@ -159,6 +161,8 @@ uint8_t* screens[] =
 	A7__p, B7__p, C7__p, D7__p, E7__p, F7__p, G7__p, H7__p, I7__p, J7__p, K7__p, L7__p, M7__p, N7__p, O7__p, P7__p,
 	A8__p, B8__p, C8__p, D8__p, E8__p, F8__p, G8__p, H8__p, I8__p, J8__p, K8__p, L8__p, M8__p, N8__p, O8__p, P8__p,
 };
+
+// gde ima koliko enemy-ja
 uint8_t enemies_array[] = 
 {
 	1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -598,8 +602,50 @@ unsigned rand_generator()
 	return lfsr =  (lfsr >> 1) | (bit << 15);
 }
 
+void update_lives(int lives) {
+	uint8_t whole;
+	uint8_t rest;
+	uint8_t empty;
+	if(lives > 0){
+		whole = lives / 2;
+		rest = lives % 2;
+		empty = (6 - 2*rest - whole) / 2;
+	}
+	else {
+		whole = 0;
+		rest = 0;
+		empty = 3;
+	}
+	
+	for(int i = 0; i < whole; i++) {
+		draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*1, FIRST_HUD_SIZE*4 - 2, FIRST_HUD_SIZE, FIRST_HUD_SIZE + 2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11 + 4 + i*10, 16 + 2*FIRST_HUD_SIZE - 4, 1);
+	}
+	for(int i = whole; i < whole + rest; i++) {
+		draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*4 - 2, FIRST_HUD_SIZE, FIRST_HUD_SIZE + 2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11 + 4 + i*10, 16 + 2*FIRST_HUD_SIZE - 4, 1);
+	}
+	for(int i = whole + rest; i < 3; i++) {
+		draw_sprite_from_atlas(HUD_sprites__p, HUD_sprites__w, FIRST_HUD_SIZE*3, FIRST_HUD_SIZE*4 - 2, FIRST_HUD_SIZE, FIRST_HUD_SIZE + 2, FIRST_HUD_PADDING + FIRST_HUD_SIZE*11 + 4 + i*10, 16 + 2*FIRST_HUD_SIZE - 4, 1);
+	}
+}
+
+void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* imunity) {
+	
+
+	// !draw_sword
+	for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
+		if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM)) {
+			gs->link.lives -= 1;
+			if(gs->link.lives < 0)
+				gs->link.lives = 0;
+			update_lives(gs->link.lives);
+			*imunity = IMUNITY_TIME;
+		}
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Game code.
+
 
 int main(void) {
 	
@@ -627,11 +673,12 @@ int main(void) {
 	gs.link.pos.y = Y_PADDING + 2 + 64;
 	gs.link.old_pos.x = gs.link.pos.x;
 	gs.link.old_pos.y = gs.link.pos.y;
-	gs.link.lives = 3;
+	gs.link.lives = 3*2; // srce moze biti na pola, 3 srca po pola
 	volatile int draw_link = 0;
 	volatile int draw_bg = 1;
 	int started = 0;
 	int draw_HUD = 0;
+	int anim_done = 0;
 
 	volatile int draw_sword = 0;
 	int refresh_sword = 0; // da li smo prethodno bili nacrtali sword a sada moramo da update pozadinu za njega?
@@ -673,8 +720,15 @@ int main(void) {
 
 	uint32_t old_screen;
 
+	int imunity_cnt = 0;
+
 	while(1){
 		// animation counter
+		if(imunity_cnt > 0)
+		{
+			imunity_cnt--;
+		}
+
 		counter++;
 		if(counter == ANIM_DELAY)
 		{
@@ -846,7 +900,7 @@ int main(void) {
 			collision_screen_enemy = screens[gs.current_screen];
 			if(init_enemies) {
 				init_enemies = 0;
-				int enemy_x = 16;
+				int enemy_x = 32;
 				int enemy_y = Y_PADDING;
 				int col1 = 0;
 				int col2 = 0;
@@ -941,7 +995,8 @@ int main(void) {
 
 		}
 		
-		
+		if(imunity_cnt == 0)
+			check_interaction(draw_sword, enemies, &gs, &imunity_cnt);
 		
 		/////////////////////////////////////
 		// Drawing.
@@ -971,7 +1026,7 @@ int main(void) {
 			draw_bg = 0;
 		}
 
-		if(in_cave == 1) {
+		if(in_cave == 1 && !anim_done && gs.current_screen == 7*OVERWORLD_MAPS_H + 7) {
 			cave_animation(gs);
 			gs.link.pos.x = 65;
 			gs.link.pos.y = Y_PADDING+36;//35
@@ -979,6 +1034,7 @@ int main(void) {
 			draw_bg = 1;
 			draw_link = 1;
 			gs.link.anim.orientation = DOWN;
+			anim_done = 1;
 		}
 
 		if(draw_bg == 1 && started){
