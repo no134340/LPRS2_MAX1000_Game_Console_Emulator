@@ -697,6 +697,8 @@ void game_over() {
 	uint8_t lineY = Y_PADDING + (title_screen__h - 9  - Y_PADDING) / 2;
 	for(int i = 0; i < 10; i++) {
 		lineX += 2*FIRST_HUD_SIZE;
+		if(text[i] == DASH)
+			continue;
 		draw_sprite_from_atlas(fonts_white__p, fonts_white__w, 
 						FIRST_HUD_SIZE*2*(text[i] % 16), FIRST_HUD_SIZE*2*(text[i] >> 4), 
 						FIRST_HUD_SIZE*2, FIRST_HUD_SIZE*2, lineX, 
