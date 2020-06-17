@@ -52,6 +52,11 @@ def configure(conf):
 	conf.env.append_value('CFLAGS', '-std=c99')
 	
 	conf.find_program(
+		'python',
+		var = 'PYTHON'
+	)
+	
+	conf.find_program(
 		'python3',
 		var = 'PYTHON3'
 	)
