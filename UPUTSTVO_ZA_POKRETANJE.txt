@@ -1,18 +1,25 @@
-1. Requirements:
+1. Resolving dependecies:
+	- run 
+	sudo ./waf prerequisites
 
-	- python
+	- this should resolve all dependecies
+	- if something goes wrong install the following:
+	
+	1. python
 	sudo apt install python
-	- python3
+	2. python3
 	sudo apt install python3
-	- pip and pip3
+	3. pip and pip3
 	sudo apt install pip
 	sudo apt install pip3
-	- pillow for both python 2 and python 3
+	4. pillow for both python 2 and python 3
 	pip install pillow
 	pip3 install pillow
+	5. sfml
+	sudo apt-get -y install libsfml-dev
 	
-2. resolving other dependencies and building:
-./waf prerequisites
+2. building:
+
 ./waf configure
 ./waf build
 
