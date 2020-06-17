@@ -136,6 +136,7 @@ typedef struct {
 	point_t pos;
 	point_t old_pos;
 	link_anim_t anim;
+	int dead;
 } enemy_t;
 
 
@@ -628,17 +629,53 @@ void update_lives(int lives) {
 	}
 }
 
-void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* imunity) {
-	
-
+void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* imunity, uint8_t* draw_enemies) {
+	if(draw_sword) {
+		for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
+			if(enemies[i].dead)
+				continue;
+			int kill = 0;
+			switch (gs->link.anim.orientation)
+			{
+			case RIGHT:
+				if((gs->link.pos.x + SPRITE_DIM > enemies[i].pos.x && gs->link.pos.x + SPRITE_DIM < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM))
+					kill = 1;
+				break;
+			case DOWN:
+				if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y + SPRITE_DIM > enemies[i].pos.y && gs->link.pos.y + SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
+					kill = 1;
+				break;
+			case LEFT:
+			if((gs->link.pos.x - SPRITE_DIM < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y + SPRITE_DIM > enemies[i].pos.y && gs->link.pos.y + SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
+					kill = 1;
+				break;
+			case UP:
+				if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y - SPRITE_DIM < enemies[i].pos.y + SPRITE_DIM))
+					kill = 1;
+				break;
+			default:
+				break;
+			}
+			if(kill) {
+				printf("enemy %d is dead.", i);
+				fflush(stdout);
+				enemies[i].dead = kill;
+				draw_enemies[i] = 0;
+			}
+		}
+	}
+	else if (*imunity == 0){
 	// !draw_sword
-	for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
-		if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM)) {
-			gs->link.lives -= 1;
-			if(gs->link.lives < 0)
-				gs->link.lives = 0;
-			update_lives(gs->link.lives);
-			*imunity = IMUNITY_TIME;
+		for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
+			if(enemies[i].dead)
+				continue;
+			if((gs->link.pos.x > enemies[i].pos.x && gs->link.pos.x < enemies[i].pos.x + SPRITE_DIM) && (gs->link.pos.y > enemies[i].pos.y && gs->link.pos.y < enemies[i].pos.y + SPRITE_DIM)) {
+				gs->link.lives -= 1;
+				if(gs->link.lives < 0)
+					gs->link.lives = 0;
+				update_lives(gs->link.lives);
+				*imunity = IMUNITY_TIME;
+			}
 		}
 	}
 }
@@ -716,6 +753,7 @@ int main(void) {
 		enemy_step_x[i] = ENEMY_STEP;
 		enemy_step_y[i] = ENEMY_STEP;
 		enemies[i].anim.orientation_state = 0;
+		enemies[i].dead = 0;
 	}
 
 	uint32_t old_screen;
@@ -900,7 +938,7 @@ int main(void) {
 			collision_screen_enemy = screens[gs.current_screen];
 			if(init_enemies) {
 				init_enemies = 0;
-				int enemy_x = 32;
+				int enemy_x = 16;
 				int enemy_y = Y_PADDING;
 				int col1 = 0;
 				int col2 = 0;
@@ -921,16 +959,16 @@ int main(void) {
 
 					enemies[i].pos.x = enemy_x;
 					enemies[i].pos.y = enemy_y;
-					draw_enemies[i] = 1;
-					enemy_x += 16;
-					enemy_y += 16;
-					
+					enemies[i].dead = 0;
+					draw_enemies[i] = 1;			
 				}
 			}
 			if(enemies_array[gs.current_screen]) {
 				int col1 = 0;
 				int col2 = 0;
 				for(int i = 0; i < number_of_enemies; i++) {
+					if(enemies[i].dead)
+						continue;
 
 					if(enemy_step_x[i] < 0 && !alter_axis) {
 						col1 = collision_screen[(( enemies[i].pos.y - Y_PADDING + 2)/TILE_SIZE)*TILES_H + (enemies[i].pos.x + enemy_step_x[i])/TILE_SIZE];
@@ -995,8 +1033,8 @@ int main(void) {
 
 		}
 		
-		if(imunity_cnt == 0)
-			check_interaction(draw_sword, enemies, &gs, &imunity_cnt);
+		
+		check_interaction(draw_sword, enemies, &gs, &imunity_cnt, draw_enemies);
 		
 		/////////////////////////////////////
 		// Drawing.
