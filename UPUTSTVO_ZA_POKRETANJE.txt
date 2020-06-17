@@ -1,6 +1,26 @@
-Ako bude bilo problema:
-1. instalirati python 3.6 verziju i pip3, i onda lepo ukuckati u terminal:
+1. Requirements:
 
- pip3 install pillow
- 
- 2. profit?????
+	- python
+	sudo apt install python
+	- python3
+	sudo apt install python3
+	- pip and pip3
+	sudo apt install pip
+	sudo apt install pip3
+	- pillow for both python 2 and python 3
+	pip install pillow
+	pip3 install pillow
+	
+2. resolving other dependencies and building:
+./waf prerequisites
+./waf configure
+./waf build
+
+3. to run the game:
+./waf run
+
+4. clean the project:
+./waf clean
+
+
+
