@@ -606,7 +606,7 @@ void update_lives(int lives) {
 
 
 
-void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* imunity, uint8_t* draw_enemies) {
+void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* imunity, uint8_t* draw_enemies, int* update_enemy) {
 	if(draw_sword) {
 		for(int i = 0; i < enemies_array[gs->current_screen]; i++) {
 			if(enemies[i].dead)
@@ -636,6 +636,7 @@ void check_interaction(int draw_sword, enemy_t* enemies, game_state_t* gs, int* 
 			if(kill) {
 				enemies[i].dead = kill;
 				draw_enemies[i] = 0;
+				update_enemy[i] = 1;
 			}
 		}
 	}
@@ -746,6 +747,11 @@ int main(void) {
 		enemies[i].dead = 0;
 	}
 	uint8_t number_of_enemies = 0;
+
+	int update_enemy[MAX_ENEMIES];
+	for(int i = 0; i < MAX_ENEMIES; i++) {
+		update_enemy[i] = 0;
+	}
 
 	// enemy anim step counter
 	int enemy_counter = 0;
@@ -947,14 +953,17 @@ int main(void) {
 			collision_screen_enemy = screens[gs.current_screen];
 			if(init_enemies) {
 				init_enemies = 0;
-				int enemy_x = 16;
-				int enemy_y = Y_PADDING;
+				int enemy_x = 48;
+				int enemy_y = Y_PADDING + 32;
 				int col1 = 0;
 				int col2 = 0;
-				for(int i = 0; i < number_of_enemies;i++) {
+				for(int i = 0; i < enemies_array[gs.current_screen];i++) {
 					do
 					{
-						enemy_y += 16;
+						enemy_y += 8;
+						if(enemy_y >= title_screen__h - 9 - SPRITE_DIM) {
+							enemy_y = Y_PADDING + 32;
+						}
 						col1 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x)/TILE_SIZE];
 						col2 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x)/TILE_SIZE];
 						if(check_collision(col1, col2))
@@ -962,8 +971,10 @@ int main(void) {
 							enemy_x += 16;
 							col1 = collision_screen[((enemy_y - Y_PADDING)/TILE_SIZE)*TILES_H + (enemy_x)/TILE_SIZE];
 						}
-						else 
-							break;
+						enemy_x += 16;
+						if(enemy_x > title_screen__w - SPRITE_DIM*2) {
+							enemy_x = 32;
+						}
 					} while (check_collision(col1, col2));
 
 					enemies[i].pos.x = enemy_x;
@@ -1011,7 +1022,7 @@ int main(void) {
 
 					if(enemy_counter) {
 						enemy_step_x[i] *= (rand_generator() % 53 ? 1 : -1);
-						enemy_step_y[i] *= (rand_generator() % 53 ? 1 : -1);
+						enemy_step_y[i] *= (rand_generator() % 33 ? 1 : -1);
 					}
 					
 					
@@ -1042,9 +1053,13 @@ int main(void) {
 			}
 
 		}
+
+		for(int i = 0; i < MAX_ENEMIES; i++) {
+			update_enemy[i] = 0;
+		}
 		
-		
-		check_interaction(draw_sword, enemies, &gs, &imunity_cnt, draw_enemies);
+		check_interaction(draw_sword, enemies, &gs, &imunity_cnt, draw_enemies, update_enemy);
+
 		
 		/////////////////////////////////////
 		// Drawing.
@@ -1118,7 +1133,7 @@ int main(void) {
 		
 		
 		for(int i = 0; i < number_of_enemies;i++) {
-			if(!enemy_counter && draw_enemies[i])
+			if(!enemy_counter && draw_enemies[i] || update_enemy[i])
 				update_background(
 					screens[gs.current_screen], TILES_H,
 					enemies[i].pos.x,
